@@ -18,4 +18,5 @@ public class CrossConfig implements WebMvcConfigurer {
                 .maxAge(3600)
                 .allowedHeaders("*");
     }
+    //////dasdasdasdasdad
 }
