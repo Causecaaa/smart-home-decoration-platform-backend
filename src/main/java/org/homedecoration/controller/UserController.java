@@ -44,6 +44,19 @@ public class UserController {
         return userService.save(user);
     }
 
+    @PutMapping("/update-profile/{id}")
+    public User updateProfile(
+            @PathVariable Long id,
+            @RequestBody User userRequest) {
+        return userService.updateProfile(
+                id,
+                userRequest.getUsername(),
+                userRequest.getPassword(),
+                userRequest.getPhone()
+        );
+    }
+
+
     // 更新用户信息
     @PutMapping("/update/{id}")
     public User updateUser(@PathVariable Long id, @RequestBody User user) {
@@ -58,9 +71,16 @@ public class UserController {
         userService.deleteById(id);
     }
 
-    // 更改用户状态（启用/禁用）
+    // 修改用户状态（启用/禁用）
     @PatchMapping("/update-status/{id}")
     public User updateUserStatus(@PathVariable Long id, @RequestParam Byte status) {
         return userService.updateStatus(id, status);
     }
+
+    // 修改用户角色
+    @PatchMapping("/update-role/{id}")
+    public User updateUserRole(@PathVariable Long id, @RequestParam String role) {
+        return userService.updateRole(id, role);
+    }
+
 }

@@ -38,9 +38,21 @@ public class UserService {
     }
 
     // 更新用户信息
-    public User update(User user) {
+    public User updateProfile(Long id, String username, String password, String phone) {
+        Optional<User> optionalUser = userRepository.findById(id);
+        if (optionalUser.isEmpty()) {
+            throw new RuntimeException("User not found with id: " + id);
+        }
+
+        User user = optionalUser.get();
+        user.setUsername(username);
+        user.setPassword(password); // 后续可以加加密逻辑
+        user.setPhone(phone);
+        user.setUpdatedAt(Instant.now());
+
         return userRepository.save(user);
     }
+
 
     public Optional<User> findById(Long id) {
         return userRepository.findById(id);
@@ -53,9 +65,22 @@ public class UserService {
             user.setStatus(status);
             user.setUpdatedAt(Instant.now()); // 更新时间
             return userRepository.save(user);
-        } else {
+        }
+        else {
             throw new RuntimeException("User not found with id: " + id);
         }
     }
 
+    public User updateRole(Long id, String role) {
+        Optional<User> optionalUser = userRepository.findById(id);
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            user.setRole(role);
+            user.setUpdatedAt(Instant.now());
+            return userRepository.save(user);
+        }
+        else {
+            throw new RuntimeException("User not found with id: " + id);
+        }
+    }
 }
