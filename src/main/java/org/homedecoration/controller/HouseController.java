@@ -2,11 +2,9 @@ package org.homedecoration.controller;
 
 import jakarta.validation.Valid;
 import org.homedecoration.entity.House;
-import org.homedecoration.entity.User;
 import org.homedecoration.service.HouseService;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
 import java.util.List;
 
 @RestController
