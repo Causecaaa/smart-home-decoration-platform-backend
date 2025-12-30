@@ -17,25 +17,25 @@ public class HouseController {
     }
 
     // 新增房屋
-    @PostMapping("/Create")
+    @PostMapping("/create")
     public House createHouse(@RequestBody House house) {
         return houseService.createHouse(house);
     }
 
     // 查询当前用户所有房屋
-    @GetMapping("/GetAll")
+    @GetMapping("/get-all")
     public List<House> getAllHouses() {
         return houseService.getAllHouses();
     }
 
     // 查询单个房屋
-    @GetMapping("/Find/{id}")
+    @GetMapping("/find/{id}")
     public House getHouseById(@PathVariable Long id) {
         return houseService.getHouseById(id);
     }
 
     // 更新房屋
-    @PutMapping("/Update/{id}")
+    @PutMapping("/update/{id}")
     public House updateHouse(@PathVariable Long id, @RequestBody House house) {
         return houseService.updateHouse(id, house);
     }

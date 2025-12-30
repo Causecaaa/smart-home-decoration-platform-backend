@@ -13,7 +13,7 @@ CREATE TABLE `user` (
 
 -- 房屋基础信息
 CREATE TABLE house (
-house_id BIGINT PRIMARY KEY COMMENT '房屋主键',
+house_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '房屋主键',
 user_id BIGINT NOT NULL COMMENT '所属用户',
 city VARCHAR(50) NOT NULL COMMENT '所在城市（影响设计规范、报价）',
 community_name VARCHAR(100) COMMENT '小区名称',
@@ -31,7 +31,7 @@ CONSTRAINT fk_house_user FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CAS
 
 -- 房屋布局信息
 CREATE TABLE house_layout (
-layout_id BIGINT PRIMARY KEY COMMENT '布局主键',
+layout_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '布局主键',
 house_id BIGINT NOT NULL COMMENT '所属房屋',
 layout_intent VARCHAR(20) COMMENT '布局意图（KEEP_ORIGINAL / REDESIGN）',
 redesign_notes VARCHAR(255) COMMENT '改造需求说明',
@@ -44,7 +44,7 @@ CONSTRAINT fk_layout_house FOREIGN KEY (house_id) REFERENCES house(house_id) ON 
 
 -- 设计方案（家具布局）
 CREATE TABLE design_scheme (
-scheme_id BIGINT PRIMARY KEY COMMENT '设计方案主键',
+scheme_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '设计方案主键',
 layout_id BIGINT NOT NULL COMMENT '所属布局',
 scheme_status VARCHAR(20) COMMENT '状态：draft / confirmed',
 scheme_version VARCHAR(20) COMMENT '方案版本号（v1 / v2）',
@@ -56,7 +56,7 @@ CONSTRAINT fk_design_layout FOREIGN KEY (layout_id) REFERENCES house_layout(layo
 
 -- 房间信息
 CREATE TABLE house_room (
-room_id BIGINT PRIMARY KEY COMMENT '房间主键',
+room_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '房间主键',
 floor_no INT COMMENT '所在楼层（1 / 2 / 3）',
 layout_id BIGINT NOT NULL COMMENT '所属布局方案',
 room_type VARCHAR(20) COMMENT '空间类型（bedroom / living_room / kitchen / bathroom）',
@@ -70,7 +70,7 @@ CONSTRAINT fk_room_layout FOREIGN KEY (layout_id) REFERENCES house_layout(layout
 
 -- 布局或设计图片
 CREATE TABLE house_layout_image (
-id BIGINT PRIMARY KEY COMMENT '图片主键',
+id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '图片主键',
 layout_id BIGINT NOT NULL COMMENT '所属布局方案',
 image_url VARCHAR(255) COMMENT '户型图/布局图地址',
 image_type VARCHAR(20) COMMENT '图片类型（ORIGINAL / STRUCTURE / FURNITURE）',

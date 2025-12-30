@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 @Table(name = "house_room")
 public class HouseRoom {
     @Id
-    @GeneratedValue(strategy = GenerationType.TABLE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "room_id", nullable = false)
     private Long id;
 

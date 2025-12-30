@@ -15,7 +15,7 @@ import java.time.Instant;
 @Table(name = "house_layout_image")
 public class HouseLayoutImage {
     @Id
-    @GeneratedValue(strategy = GenerationType.TABLE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
