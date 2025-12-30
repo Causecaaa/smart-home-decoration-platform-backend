@@ -1,5 +1,6 @@
 package org.homedecoration.controller;
 
+import jakarta.validation.Valid;
 import org.homedecoration.entity.User;
 import org.homedecoration.service.UserService;
 import org.springframework.web.bind.annotation.*;
@@ -38,7 +39,7 @@ public class UserController {
 
     // 新增用户
     @PostMapping("/create")
-    public User createUser(@RequestBody User user) {
+    public User createUser(@Valid @RequestBody User user) {
         user.setCreatedAt(Instant.now());
         user.setUpdatedAt(Instant.now());
         return userService.save(user);
@@ -47,7 +48,7 @@ public class UserController {
     @PutMapping("/update-profile/{id}")
     public User updateProfile(
             @PathVariable Long id,
-            @RequestBody User userRequest) {
+            @Valid @RequestBody User userRequest) {
         return userService.updateProfile(
                 id,
                 userRequest.getUsername(),
@@ -59,7 +60,7 @@ public class UserController {
 
     // 更新用户信息
     @PutMapping("/update/{id}")
-    public User updateUser(@PathVariable Long id, @RequestBody User user) {
+    public User updateUser(@PathVariable Long id, @Valid @RequestBody User user) {
         user.setId(id);
         user.setUpdatedAt(Instant.now());
         return userService.save(user);
@@ -73,7 +74,7 @@ public class UserController {
 
     // 修改用户状态（启用/禁用）
     @PatchMapping("/update-status/{id}")
-    public User updateUserStatus(@PathVariable Long id, @RequestParam Byte status) {
+    public User updateUserStatus(@PathVariable Long id,@Valid @RequestParam Byte status) {
         return userService.updateStatus(id, status);
     }
 
