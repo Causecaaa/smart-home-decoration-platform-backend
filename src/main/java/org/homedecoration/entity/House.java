@@ -1,6 +1,8 @@
 package org.homedecoration.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
@@ -20,11 +22,13 @@ public class House {
     @Column(name = "house_id", nullable = false)
     private Long id;
 
+    @NotNull(message = "房屋所属用户不能为空")
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "user_id", nullable = false)
     private org.homedecoration.entity.User user;
 
+    @NotBlank(message = "城市不能为空")
     @Column(name = "city", nullable = false, length = 50)
     private String city;
 
@@ -40,6 +44,7 @@ public class House {
     @Column(name = "room_no", length = 20)
     private String roomNo;
 
+    @NotNull(message = "建筑面积不能为空")
     @Column(name = "area", nullable = false, precision = 6, scale = 2)
     private BigDecimal area;
 

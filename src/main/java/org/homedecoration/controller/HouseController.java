@@ -1,5 +1,6 @@
 package org.homedecoration.controller;
 
+import jakarta.validation.Valid;
 import org.homedecoration.entity.House;
 import org.homedecoration.entity.User;
 import org.homedecoration.service.HouseService;
@@ -20,7 +21,7 @@ public class HouseController {
 
     // 新增房屋
     @PostMapping("/create")
-    public House createHouse(@RequestBody House house) {
+    public House createHouse(@Valid @RequestBody House house) {
         return houseService.createHouse(house);
     }
 
@@ -39,7 +40,7 @@ public class HouseController {
 
     // 更新房屋
     @PutMapping("/update/{id}")
-    public House updateHouse(@PathVariable Long id, @RequestBody House house) {
+    public House updateHouse(@PathVariable Long id, @Valid @RequestBody House house) {
         house.setId(id);
         return houseService.updateHouse(house);
     }
