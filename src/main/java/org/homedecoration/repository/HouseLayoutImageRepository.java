@@ -1,0 +1,16 @@
+package org.homedecoration.repository;
+
+import org.homedecoration.entity.HouseLayoutImage;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface HouseLayoutImageRepository extends JpaRepository<HouseLayoutImage, Long> {
+    // 根据布局查图片列表
+    List<HouseLayoutImage> findByLayoutId(Long layoutId);
+
+    // 可按图片类型查
+    List<HouseLayoutImage> findByLayoutIdAndImageType(Long layoutId, String imageType);
+}

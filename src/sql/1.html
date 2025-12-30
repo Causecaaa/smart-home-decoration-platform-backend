@@ -1,0 +1,81 @@
+-- 系统用户表
+CREATE TABLE `user` (
+`id` BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '用户ID',
+`username` VARCHAR(50) NOT NULL UNIQUE COMMENT '登录用户名',
+`password` VARCHAR(255) NOT NULL COMMENT '加密后的密码',
+`phone` VARCHAR(20) UNIQUE COMMENT '手机号',
+`email` VARCHAR(100) UNIQUE COMMENT '邮箱',
+`role` VARCHAR(20) NOT NULL COMMENT '角色：USER / MERCHANT / DESIGNER / INSPECTOR / ADMIN',
+`status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态：0-禁用 1-正常 2-注销',
+`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+`updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统用户表';
+
+-- 房屋基础信息
+CREATE TABLE house (
+house_id BIGINT PRIMARY KEY COMMENT '房屋主键',
+user_id BIGINT NOT NULL COMMENT '所属用户',
+city VARCHAR(50) NOT NULL COMMENT '所在城市（影响设计规范、报价）',
+community_name VARCHAR(100) COMMENT '小区名称',
+building_no VARCHAR(20) COMMENT '楼栋号',
+unit_no VARCHAR(20) COMMENT '单元号',
+room_no VARCHAR(20) COMMENT '门牌号',
+area DECIMAL(6,2) NOT NULL COMMENT '建筑面积（㎡）',
+layout_type VARCHAR(50) COMMENT '户型描述（如 2室1厅1卫）',
+floor_count INT COMMENT '总层数',
+decoration_type VARCHAR(20) COMMENT '装修类型（full / half / loose）',
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+CONSTRAINT fk_house_user FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='房屋基础信息表';
+
+-- 房屋布局信息
+CREATE TABLE house_layout (
+layout_id BIGINT PRIMARY KEY COMMENT '布局主键',
+house_id BIGINT NOT NULL COMMENT '所属房屋',
+layout_intent VARCHAR(20) COMMENT '布局意图（KEEP_ORIGINAL / REDESIGN）',
+redesign_notes VARCHAR(255) COMMENT '改造需求说明',
+layout_version VARCHAR(20) COMMENT '布局版本号（v1 / v2）',
+layout_status VARCHAR(20) COMMENT '房屋空间布局状态：draft / confirmed',
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+CONSTRAINT fk_layout_house FOREIGN KEY (house_id) REFERENCES house(house_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='房屋布局信息表';
+
+-- 设计方案（家具布局）
+CREATE TABLE design_scheme (
+scheme_id BIGINT PRIMARY KEY COMMENT '设计方案主键',
+layout_id BIGINT NOT NULL COMMENT '所属布局',
+scheme_status VARCHAR(20) COMMENT '状态：draft / confirmed',
+scheme_version VARCHAR(20) COMMENT '方案版本号（v1 / v2）',
+confirmed_furniture_image_id BIGINT COMMENT '确认的家具布局图ID',
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+CONSTRAINT fk_design_layout FOREIGN KEY (layout_id) REFERENCES house_layout(layout_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='设计方案表';
+
+-- 房间信息
+CREATE TABLE house_room (
+room_id BIGINT PRIMARY KEY COMMENT '房间主键',
+floor_no INT COMMENT '所在楼层（1 / 2 / 3）',
+layout_id BIGINT NOT NULL COMMENT '所属布局方案',
+room_type VARCHAR(20) COMMENT '空间类型（bedroom / living_room / kitchen / bathroom）',
+room_name VARCHAR(50) COMMENT '空间名称（主卧 / 次卧 / 客厅）',
+area DECIMAL(6,2) COMMENT '空间面积（㎡）',
+has_window BOOLEAN COMMENT '是否有窗',
+has_balcony BOOLEAN COMMENT '是否带阳台',
+notes VARCHAR(255) COMMENT '用户补充说明',
+CONSTRAINT fk_room_layout FOREIGN KEY (layout_id) REFERENCES house_layout(layout_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='房间信息表';
+
+-- 布局或设计图片
+CREATE TABLE house_layout_image (
+id BIGINT PRIMARY KEY COMMENT '图片主键',
+layout_id BIGINT NOT NULL COMMENT '所属布局方案',
+image_url VARCHAR(255) COMMENT '户型图/布局图地址',
+image_type VARCHAR(20) COMMENT '图片类型（ORIGINAL / STRUCTURE / FURNITURE）',
+image_desc VARCHAR(255) COMMENT '图片说明',
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+CONSTRAINT fk_image_layout FOREIGN KEY (layout_id) REFERENCES house_layout(layout_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='布局/设计图片表';

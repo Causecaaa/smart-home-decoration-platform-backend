@@ -1,0 +1,61 @@
+package org.homedecoration.service;
+
+import org.homedecoration.entity.User;
+import org.homedecoration.repository.UserRepository;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class UserService {
+
+    private final UserRepository userRepository;
+
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    // 查询全部用户
+    public List<User> findAll() {
+        return userRepository.findAll();
+    }
+
+    // 根据用户名查询
+    public Optional<User> findByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
+
+    // 新增用户
+    public User save(User user) {
+        return userRepository.save(user);
+    }
+
+    // 删除用户
+    public void deleteById(Long id) {
+        userRepository.deleteById(id);
+    }
+
+    // 更新用户信息
+    public User update(User user) {
+        return userRepository.save(user);
+    }
+
+    public Optional<User> findById(Long id) {
+        return userRepository.findById(id);
+    }
+
+    public User updateStatus(Long id, Byte status) {
+        Optional<User> optionalUser = userRepository.findById(id);
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            user.setStatus(status);
+            user.setUpdatedAt(Instant.now()); // 更新时间
+            return userRepository.save(user);
+        } else {
+            throw new RuntimeException("User not found with id: " + id);
+        }
+    }
+
+}
