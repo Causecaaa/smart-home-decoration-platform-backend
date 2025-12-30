@@ -21,7 +21,7 @@ public class HouseRoom {
     @Column(name = "floor_no")
     private Integer floorNo;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "layout_id", nullable = false)
     private HouseLayout layout;

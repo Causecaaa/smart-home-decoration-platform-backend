@@ -40,8 +40,10 @@ public class HouseController {
     // 更新房屋
     @PutMapping("/update/{id}")
     public House updateHouse(@PathVariable Long id, @RequestBody House house) {
-        return houseService.updateHouse(id, house);
+        house.setId(id);
+        return houseService.updateHouse(house);
     }
+
 
     // 删除房屋
     @DeleteMapping("/{id}")

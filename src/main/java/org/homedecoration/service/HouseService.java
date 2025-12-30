@@ -41,21 +41,31 @@ public class HouseService {
         return houseRepository.findById(id).orElse(null);
     }
 
-    public House updateHouse(Long id, House house) {
-        return houseRepository.findById(id).map(existing -> {
-            existing.setCity(house.getCity());
-            existing.setCommunityName(house.getCommunityName());
-            existing.setBuildingNo(house.getBuildingNo());
-            existing.setUnitNo(house.getUnitNo());
-            existing.setRoomNo(house.getRoomNo());
-            existing.setArea(house.getArea());
-            existing.setLayoutType(house.getLayoutType());
-            existing.setFloorCount(house.getFloorCount());
-            existing.setDecorationType(house.getDecorationType());
-            existing.setUpdatedAt(house.getUpdatedAt() != null ? house.getUpdatedAt() : java.time.Instant.now());
-            return houseRepository.save(existing);
-        }).orElse(null);
+    public House updateHouse(House house) {
+        // 先查原来的房屋
+        House existing = houseRepository.findById(house.getId())
+                .orElseThrow(() -> new RuntimeException("House not found"));
+
+        // 更新字段（user、city、communityName ...）
+        if (house.getUser() != null && house.getUser().getId() != null) {
+            existing.setUser(userRepository.findById(house.getUser().getId())
+                    .orElseThrow(() -> new RuntimeException("User not found")));
+        }
+
+        existing.setCity(house.getCity());
+        existing.setCommunityName(house.getCommunityName());
+        existing.setBuildingNo(house.getBuildingNo());
+        existing.setUnitNo(house.getUnitNo());
+        existing.setRoomNo(house.getRoomNo());
+        existing.setArea(house.getArea());
+        existing.setLayoutType(house.getLayoutType());
+        existing.setFloorCount(house.getFloorCount());
+        existing.setDecorationType(house.getDecorationType());
+        existing.setUpdatedAt(Instant.now());
+
+        return houseRepository.save(existing);
     }
+
 
 
     public void deleteHouse(Long id) {
