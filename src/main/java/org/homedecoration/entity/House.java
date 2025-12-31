@@ -3,6 +3,7 @@ package org.homedecoration.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
@@ -17,6 +18,12 @@ import java.time.Instant;
 @Entity
 @Table(name = "house")
 public class House {
+    public enum DecorationType {
+        FULL,
+        HALF,
+        LOOSE
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "house_id", nullable = false)
@@ -54,8 +61,9 @@ public class House {
     @Column(name = "floor_count")
     private Integer floorCount;
 
-    @Column(name = "decoration_type", length = 20)
-    private String decorationType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "decoration_type", nullable = false, length = 20)
+    private DecorationType decorationType;
 
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at")

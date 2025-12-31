@@ -71,7 +71,7 @@ public class UserService {
         }
     }
 
-    public User updateRole(Long id, String role) {
+    public User updateRole(Long id, User.Role role) {
         Optional<User> optionalUser = userRepository.findById(id);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();

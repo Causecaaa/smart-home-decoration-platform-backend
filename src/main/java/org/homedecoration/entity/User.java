@@ -13,6 +13,14 @@ import java.time.Instant;
 @Entity
 @Table(name = "user")
 public class User {
+    public enum Role {
+        USER,
+        MERCHANT,
+        DESIGNER,
+        INSPECTOR,
+        ADMIN
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -38,12 +46,9 @@ public class User {
     @Column(name = "email", length = 100)
     private String email;
 
-    @Pattern(
-            regexp = "USER|MERCHANT|DESIGNER|INSPECTOR|ADMIN",
-            message = "角色必须是 USER、MERCHANT、DESIGNER、INSPECTOR 或 ADMIN 之一"
-    )
+    @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = 20)
-    private String role;
+    private Role role;
 
     @Min(value = 0,message = "status 不能小于0")
     @Max(value = 2,message = "status 不能超过2")

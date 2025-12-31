@@ -80,7 +80,7 @@ public class UserController {
 
     // 修改用户角色
     @PatchMapping("/update-role/{id}")
-    public User updateUserRole(@PathVariable Long id, @RequestParam String role) {
+    public User updateUserRole(@PathVariable Long id, @RequestParam User.Role role) {
         return userService.updateRole(id, role);
     }
 
