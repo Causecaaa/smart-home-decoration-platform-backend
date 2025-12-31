@@ -1,7 +1,9 @@
 package org.homedecoration.service;
 
+import org.homedecoration.dto.request.CreateUserRequest;
 import org.homedecoration.entity.User;
 import org.homedecoration.repository.UserRepository;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -22,13 +24,38 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    // 根据用户名查询
-    public Optional<User> findByUsername(String username) {
-        return userRepository.findByUsername(username);
+    // 根据ID查询
+    public User findById(Long id) {
+        Optional<User> optionalUser = userRepository.findById(id);
+        if(optionalUser.isPresent()) {
+            return optionalUser.get();
+        }
+        else {
+            throw new RuntimeException("User not found with id: " + id);
+        }
     }
 
+    // 根据用户名查询
+    public User findByUsername(String username) {
+        Optional<User> optionalUser = userRepository.findByUsername(username);
+        if(optionalUser.isPresent()) {
+            return optionalUser.get();
+        }
+        else {
+            throw new RuntimeException("User not found with username: " + username);
+        }
+    }
+
+
     // 新增用户
-    public User save(User user) {
+    public User save(CreateUserRequest request) {
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setPassword(request.getPassword());
+        user.setEmail(request.getEmail());
+        user.setPhone(request.getPhone());
+        user.setRole(User.Role.USER);
+        user.setStatus((byte) 1);
         return userRepository.save(user);
     }
 
@@ -53,10 +80,6 @@ public class UserService {
         return userRepository.save(user);
     }
 
-
-    public Optional<User> findById(Long id) {
-        return userRepository.findById(id);
-    }
 
     public User updateStatus(Long id, Byte status) {
         Optional<User> optionalUser = userRepository.findById(id);

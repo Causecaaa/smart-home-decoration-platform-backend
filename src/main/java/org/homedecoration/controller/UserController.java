@@ -1,13 +1,14 @@
 package org.homedecoration.controller;
 
 import jakarta.validation.Valid;
+import org.homedecoration.dto.request.CreateUserRequest;
+import org.homedecoration.dto.response.UserResponse;
 import org.homedecoration.entity.User;
 import org.homedecoration.service.UserService;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/user")
@@ -21,28 +22,32 @@ public class UserController {
 
     // 查询全部用户
     @GetMapping("/get-all")
-    public List<User> getAllUsers() {
-        return userService.findAll();
+    public List<UserResponse> getAllUsers() {
+        return userService.findAll()
+                .stream()
+                .map(UserResponse::toDTO)
+                .toList();
     }
+
 
     // 根据用户名查询
-    @GetMapping("/find-by-username/{username}")
-    public Optional<User> getByUsername(@PathVariable String username) {
-        return userService.findByUsername(username);
+    @GetMapping("/username/{username}")
+    public UserResponse getByUsername(@PathVariable String username) {
+        User user = userService.findByUsername(username);
+        return UserResponse.toDTO(user);
     }
 
+
     // 查询单个用户（按 ID）
-    @GetMapping("/get/{id}")
-    public Optional<User> getUserById(@PathVariable Long id) {
-        return userService.findById(id);
+    @GetMapping("/id/{id}")
+    public UserResponse getUserById(@PathVariable Long id) {
+        return UserResponse.toDTO(userService.findById(id));
     }
 
     // 新增用户
     @PostMapping("/create")
-    public User createUser(@Valid @RequestBody User user) {
-        user.setCreatedAt(Instant.now());
-        user.setUpdatedAt(Instant.now());
-        return userService.save(user);
+    public UserResponse createUser(@Valid @RequestBody CreateUserRequest request) {
+        return UserResponse.toDTO(userService.save(request));
     }
 
     @PutMapping("/update-profile/{id}")
@@ -60,10 +65,8 @@ public class UserController {
 
     // 更新用户信息
     @PutMapping("/update/{id}")
-    public User updateUser(@PathVariable Long id, @Valid @RequestBody User user) {
-        user.setId(id);
-        user.setUpdatedAt(Instant.now());
-        return userService.save(user);
+    public UserResponse updateUser(@PathVariable Long id, @Valid @RequestBody CreateUserRequest request) {
+        return UserResponse.toDTO(userService.save(request));
     }
 
     // 删除用户
@@ -74,14 +77,14 @@ public class UserController {
 
     // 修改用户状态（启用/禁用）
     @PatchMapping("/update-status/{id}")
-    public User updateUserStatus(@PathVariable Long id,@Valid @RequestParam Byte status) {
-        return userService.updateStatus(id, status);
+    public UserResponse updateUserStatus(@PathVariable Long id, @Valid @RequestParam Byte status) {
+        return UserResponse.toDTO(userService.updateStatus(id, status));
     }
 
     // 修改用户角色
     @PatchMapping("/update-role/{id}")
-    public User updateUserRole(@PathVariable Long id, @RequestParam User.Role role) {
-        return userService.updateRole(id, role);
+    public UserResponse updateUserRole(@PathVariable Long id, @RequestParam User.Role role) {
+        return UserResponse.toDTO(userService.updateRole(id, role));
     }
 
 }

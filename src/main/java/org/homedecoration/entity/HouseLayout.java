@@ -21,8 +21,9 @@ public class HouseLayout {
         REDESIGN
     }
     public enum LayoutStatus {
-        DRAFT,
-        CONFIRMED
+        DRAFT,          // 草稿（用户刚创建 / 设计师未完成）
+        SUBMITTED,      // 设计师已提交方案（待用户选择）
+        CONFIRMED       // 用户已确认的最终方案
     }
 
     @Id

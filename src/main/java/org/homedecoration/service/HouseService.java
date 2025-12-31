@@ -24,6 +24,7 @@ public class HouseService {
     public House createHouse(House house) {
         User user = userRepository.findById(house.getUser().getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
         house.setUser(user);
 
         house.setCreatedAt(Instant.now());
