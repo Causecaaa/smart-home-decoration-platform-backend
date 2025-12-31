@@ -1,5 +1,6 @@
 package org.homedecoration.repository;
 
+import jakarta.validation.constraints.Size;
 import org.homedecoration.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -9,4 +10,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByUsername(String username);
 
+    Optional<User> findByEmail(String email);
+
+    Optional<Object> findByPhone(@Size(max = 20, min = 10, message = "电话长度应该在10-20个字符之间") String phone);
 }

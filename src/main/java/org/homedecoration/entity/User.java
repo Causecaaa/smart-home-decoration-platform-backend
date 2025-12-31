@@ -23,6 +23,11 @@ public class User {
         ADMIN
     }
 
+    public enum Status {
+        ACTIVE,
+        INACTIVE,
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -52,11 +57,9 @@ public class User {
     @Column(name = "role", nullable = false, length = 20)
     private Role role;
 
-    @Min(value = 0,message = "status 不能小于0")
-    @Max(value = 2,message = "status 不能超过2")
-    @ColumnDefault("1")
-    @Column(name = "status", nullable = false)
-    private Byte status;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private Status status;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

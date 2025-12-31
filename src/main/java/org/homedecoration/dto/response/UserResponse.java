@@ -12,7 +12,7 @@ public class UserResponse {
     private String email;
     private String phone;
     private User.Role role;
-    private Byte status;
+    private User.Status status;
     private Instant createdAt;
     private Instant updatedAt;
 

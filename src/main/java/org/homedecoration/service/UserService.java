@@ -1,109 +1,121 @@
 package org.homedecoration.service;
 
 import org.homedecoration.dto.request.CreateUserRequest;
+import org.homedecoration.dto.request.UpdateProfileRequest;
 import org.homedecoration.entity.User;
 import org.homedecoration.repository.UserRepository;
-import org.springframework.data.crossstore.ChangeSetPersister;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    // 查询全部用户
     public List<User> findAll() {
         return userRepository.findAll();
     }
 
-    // 根据ID查询
     public User findById(Long id) {
-        Optional<User> optionalUser = userRepository.findById(id);
-        if(optionalUser.isPresent()) {
-            return optionalUser.get();
-        }
-        else {
-            throw new RuntimeException("User not found with id: " + id);
-        }
+        return userRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("用户不存在，id=" + id));
     }
 
-    // 根据用户名查询
     public User findByUsername(String username) {
-        Optional<User> optionalUser = userRepository.findByUsername(username);
-        if(optionalUser.isPresent()) {
-            return optionalUser.get();
-        }
-        else {
-            throw new RuntimeException("User not found with username: " + username);
-        }
+        return userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new RuntimeException("用户不存在，username=" + username));
+    }
+
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("用户不存在，email=" + email));
     }
 
 
-    // 新增用户
-    public User save(CreateUserRequest request) {
+    public User createUser(CreateUserRequest request) {
+        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new RuntimeException("用户名已存在");
+        }
+
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new RuntimeException("邮箱已注册");
+        }
+
+        if (userRepository.findByPhone(request.getPhone()).isPresent()) {
+            throw new RuntimeException("手机号已注册");
+        }
+
         User user = new User();
         user.setUsername(request.getUsername());
-        user.setPassword(request.getPassword());
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
+
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
         user.setRole(User.Role.USER);
-        user.setStatus((byte) 1);
+        user.setStatus(User.Status.ACTIVE);
+
         return userRepository.save(user);
     }
 
-    // 删除用户
-    public void deleteById(Long id) {
-        userRepository.deleteById(id);
-    }
 
-    // 更新用户信息
-    public User updateProfile(Long id, String username, String password, String phone) {
-        Optional<User> optionalUser = userRepository.findById(id);
-        if (optionalUser.isEmpty()) {
-            throw new RuntimeException("User not found with id: " + id);
+    public User login(String email, String password) {
+        User user = findByEmail(email);
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new IllegalArgumentException("密码错误");
         }
 
-        User user = optionalUser.get();
-        user.setUsername(username);
-        user.setPassword(password); // 后续可以加加密逻辑
-        user.setPhone(phone);
+        return user;
+    }
+
+
+    public User updateProfile(Long userId, UpdateProfileRequest request) {
+        User user = findById(userId);
+
+        user.setUsername(request.getUsername());
+        user.setPhone(request.getPhone());
+
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+
         user.setUpdatedAt(Instant.now());
-
         return userRepository.save(user);
     }
 
-
-    public User updateStatus(Long id, Byte status) {
-        Optional<User> optionalUser = userRepository.findById(id);
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            user.setStatus(status);
-            user.setUpdatedAt(Instant.now()); // 更新时间
-            return userRepository.save(user);
-        }
-        else {
-            throw new RuntimeException("User not found with id: " + id);
-        }
+    public User updateStatus(Long id, User.Status status) {
+        User user = findById(id);
+        user.setStatus(status);
+        user.setUpdatedAt(Instant.now());
+        return userRepository.save(user);
     }
 
     public User updateRole(Long id, User.Role role) {
-        Optional<User> optionalUser = userRepository.findById(id);
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            user.setRole(role);
-            user.setUpdatedAt(Instant.now());
-            return userRepository.save(user);
+        User user = findById(id);
+        user.setRole(role);
+        user.setUpdatedAt(Instant.now());
+        return userRepository.save(user);
+    }
+
+
+    public void deleteById(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new RuntimeException("用户不存在，id=" + id);
         }
-        else {
-            throw new RuntimeException("User not found with id: " + id);
-        }
+        userRepository.deleteById(id);
     }
 }

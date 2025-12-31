@@ -2,12 +2,14 @@ package org.homedecoration.controller;
 
 import jakarta.validation.Valid;
 import org.homedecoration.dto.request.CreateUserRequest;
+import org.homedecoration.dto.request.LoginRequest;
+import org.homedecoration.dto.request.UpdateProfileRequest;
+import org.homedecoration.common.ApiResponse;
 import org.homedecoration.dto.response.UserResponse;
 import org.homedecoration.entity.User;
 import org.homedecoration.service.UserService;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -20,70 +22,78 @@ public class UserController {
         this.userService = userService;
     }
 
+    // 新增用户
+    @PostMapping("/create")
+    public ApiResponse<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
+        return ApiResponse.success(
+                UserResponse.toDTO(userService.createUser(request))
+        );
+    }
+
+    @PostMapping("/login")
+    public ApiResponse<UserResponse> login(@RequestBody LoginRequest request) {
+        return ApiResponse.success(UserResponse.toDTO(
+                userService.login(request.getEmail(), request.getPassword()))
+        );
+    }
+
+
     // 查询全部用户
     @GetMapping("/get-all")
-    public List<UserResponse> getAllUsers() {
-        return userService.findAll()
+    public ApiResponse<List<UserResponse>> getAllUsers() {
+        List<UserResponse> list = userService.findAll()
                 .stream()
                 .map(UserResponse::toDTO)
                 .toList();
+        return ApiResponse.success(list);
     }
 
 
     // 根据用户名查询
     @GetMapping("/username/{username}")
-    public UserResponse getByUsername(@PathVariable String username) {
-        User user = userService.findByUsername(username);
-        return UserResponse.toDTO(user);
+    public ApiResponse<UserResponse> getByUsername(@PathVariable String username) {
+        return ApiResponse.success(
+                UserResponse.toDTO(userService.findByUsername(username))
+        );
     }
 
 
     // 查询单个用户（按 ID）
     @GetMapping("/id/{id}")
-    public UserResponse getUserById(@PathVariable Long id) {
-        return UserResponse.toDTO(userService.findById(id));
-    }
-
-    // 新增用户
-    @PostMapping("/create")
-    public UserResponse createUser(@Valid @RequestBody CreateUserRequest request) {
-        return UserResponse.toDTO(userService.save(request));
-    }
-
-    @PutMapping("/update-profile/{id}")
-    public User updateProfile(
-            @PathVariable Long id,
-            @Valid @RequestBody User userRequest) {
-        return userService.updateProfile(
-                id,
-                userRequest.getUsername(),
-                userRequest.getPassword(),
-                userRequest.getPhone()
+    public ApiResponse<UserResponse> getUserById(@PathVariable Long id) {
+        return ApiResponse.success(
+                UserResponse.toDTO(userService.findById(id))
         );
     }
 
 
-    // 更新用户信息
-    @PutMapping("/update/{id}")
-    public UserResponse updateUser(@PathVariable Long id, @Valid @RequestBody CreateUserRequest request) {
-        return UserResponse.toDTO(userService.save(request));
+
+    @PutMapping("/update-profile/{id}")
+    public ApiResponse<UserResponse> updateProfile(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        return ApiResponse.success(
+                UserResponse.toDTO(userService.updateProfile(id, request))
+        );
     }
+
 
     // 删除用户
     @DeleteMapping("/delete/{id}")
-    public void deleteUser(@PathVariable Long id) {
+    public ApiResponse<Void> deleteUser(@PathVariable Long id) {
         userService.deleteById(id);
+        return ApiResponse.success(null);
     }
 
     // 修改用户状态（启用/禁用）
     @PatchMapping("/update-status/{id}")
-    public UserResponse updateUserStatus(@PathVariable Long id, @Valid @RequestParam Byte status) {
+    public UserResponse updateUserStatus(@PathVariable Long id, @Valid @RequestParam User.Status status) {
         return UserResponse.toDTO(userService.updateStatus(id, status));
     }
 
     // 修改用户角色
     @PatchMapping("/update-role/{id}")
-    public UserResponse updateUserRole(@PathVariable Long id, @RequestParam User.Role role) {
+    public UserResponse updateUserRole(@PathVariable Long id, @Valid @RequestParam User.Role role) {
         return UserResponse.toDTO(userService.updateRole(id, role));
     }
 
