@@ -87,14 +87,18 @@ public class UserController {
 
     // 修改用户状态（启用/禁用）
     @PatchMapping("/update-status/{id}")
-    public UserResponse updateUserStatus(@PathVariable Long id, @Valid @RequestParam User.Status status) {
-        return UserResponse.toDTO(userService.updateStatus(id, status));
+    public ApiResponse<UserResponse> updateUserStatus(@PathVariable Long id, @Valid @RequestParam User.Status status) {
+        return ApiResponse.success(
+                UserResponse.toDTO(userService.updateStatus(id, status))
+        );
     }
 
     // 修改用户角色
     @PatchMapping("/update-role/{id}")
-    public UserResponse updateUserRole(@PathVariable Long id, @Valid @RequestParam User.Role role) {
-        return UserResponse.toDTO(userService.updateRole(id, role));
+    public ApiResponse<UserResponse> updateUserRole(@PathVariable Long id, @Valid @RequestParam User.Role role) {
+        return ApiResponse.success(
+                UserResponse.toDTO(userService.updateRole(id, role))
+        );
     }
 
 }
