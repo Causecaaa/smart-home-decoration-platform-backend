@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import org.homedecoration.common.ApiResponse;
 import org.homedecoration.dto.request.UpdateHouseRequest;
 import org.homedecoration.dto.response.HouseResponse;
-import org.homedecoration.dto.response.UserResponse;
 import org.homedecoration.entity.House;
 import org.homedecoration.service.HouseService;
 import org.springframework.web.bind.annotation.*;

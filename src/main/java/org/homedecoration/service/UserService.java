@@ -7,7 +7,6 @@ import org.homedecoration.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -22,40 +21,40 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public List<User> findAll() {
+    public List<User> getAll() {
         return userRepository.findAll();
     }
 
-    public User findById(Long id) {
+    public User getById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("用户不存在，id=" + id));
+                        new RuntimeException("User not found with id: " + id));
     }
 
-    public User findByUsername(String username) {
+    public User getByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() ->
-                        new RuntimeException("用户不存在，username=" + username));
+                        new RuntimeException("User not found with username: " + username));
     }
 
-    public User findByEmail(String email) {
+    public User getByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() ->
-                        new RuntimeException("用户不存在，email=" + email));
+                        new RuntimeException("User not found with email: " + email));
     }
 
 
     public User createUser(CreateUserRequest request) {
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new RuntimeException("用户名已存在");
+            throw new RuntimeException("User already exists");
         }
 
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("邮箱已注册");
+            throw new RuntimeException("email already exists");
         }
 
         if (userRepository.findByPhone(request.getPhone()).isPresent()) {
-            throw new RuntimeException("手机号已注册");
+            throw new RuntimeException("phone already exists");
         }
 
         User user = new User();
@@ -73,10 +72,10 @@ public class UserService {
 
 
     public User login(String email, String password) {
-        User user = findByEmail(email);
+        User user = getByEmail(email);
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new IllegalArgumentException("密码错误");
+            throw new IllegalArgumentException("password incorrect");
         }
 
         return user;
@@ -84,7 +83,7 @@ public class UserService {
 
 
     public User updateProfile(Long userId, UpdateProfileRequest request) {
-        User user = findById(userId);
+        User user = getById(userId);
 
         user.setUsername(request.getUsername());
         user.setPhone(request.getPhone());
@@ -97,22 +96,20 @@ public class UserService {
     }
 
     public User updateStatus(Long id, User.Status status) {
-        User user = findById(id);
+        User user = getById(id);
         user.setStatus(status);
         return userRepository.save(user);
     }
 
     public User updateRole(Long id, User.Role role) {
-        User user = findById(id);
+        User user = getById(id);
         user.setRole(role);
         return userRepository.save(user);
     }
 
 
     public void deleteById(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new RuntimeException("用户不存在，id=" + id);
-        }
+        getById(id);
         userRepository.deleteById(id);
     }
 }

@@ -7,7 +7,6 @@ import org.homedecoration.repository.HouseRepository;
 import org.homedecoration.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -24,7 +23,7 @@ public class HouseService {
 
     public House createHouse(House house) {
         User user = userRepository.findById(house.getUser().getId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + house.getUser().getId()));
 
         house.setUser(user);
 
@@ -37,12 +36,13 @@ public class HouseService {
     }
 
     public House getHouseById(Long id) {
-        return houseRepository.findById(id).orElse(null);
+        return houseRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("House not found with id: " + id));
     }
 
+
     public House updateHouse(UpdateHouseRequest request, Long id) {
-        House existing = houseRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("House not found"));
+        House existing = getHouseById(id);
 
         existing.setCity(request.getCity());
         existing.setCommunityName(request.getCommunityName());

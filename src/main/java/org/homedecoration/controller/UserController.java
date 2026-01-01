@@ -41,7 +41,7 @@ public class UserController {
     // 查询全部用户
     @GetMapping("/get-all")
     public ApiResponse<List<UserResponse>> getAllUsers() {
-        List<UserResponse> list = userService.findAll()
+        List<UserResponse> list = userService.getAll()
                 .stream()
                 .map(UserResponse::toDTO)
                 .toList();
@@ -53,7 +53,7 @@ public class UserController {
     @GetMapping("/username/{username}")
     public ApiResponse<UserResponse> getByUsername(@PathVariable String username) {
         return ApiResponse.success(
-                UserResponse.toDTO(userService.findByUsername(username))
+                UserResponse.toDTO(userService.getByUsername(username))
         );
     }
 
@@ -62,7 +62,7 @@ public class UserController {
     @GetMapping("/id/{id}")
     public ApiResponse<UserResponse> getUserById(@PathVariable Long id) {
         return ApiResponse.success(
-                UserResponse.toDTO(userService.findById(id))
+                UserResponse.toDTO(userService.getById(id))
         );
     }
 
