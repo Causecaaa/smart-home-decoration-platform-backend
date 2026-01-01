@@ -93,21 +93,18 @@ public class UserService {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
-        user.setUpdatedAt(Instant.now());
         return userRepository.save(user);
     }
 
     public User updateStatus(Long id, User.Status status) {
         User user = findById(id);
         user.setStatus(status);
-        user.setUpdatedAt(Instant.now());
         return userRepository.save(user);
     }
 
     public User updateRole(Long id, User.Role role) {
         User user = findById(id);
         user.setRole(role);
-        user.setUpdatedAt(Instant.now());
         return userRepository.save(user);
     }
 
