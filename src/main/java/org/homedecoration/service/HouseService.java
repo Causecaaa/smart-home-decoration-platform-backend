@@ -1,5 +1,6 @@
 package org.homedecoration.service;
 
+import org.homedecoration.dto.request.CreateHouseRequest;
 import org.homedecoration.dto.request.UpdateHouseRequest;
 import org.homedecoration.entity.House;
 import org.homedecoration.entity.User;
@@ -7,6 +8,7 @@ import org.homedecoration.repository.HouseRepository;
 import org.homedecoration.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -21,14 +23,25 @@ public class HouseService {
         this.userRepository = userRepository;
     }
 
-    public House createHouse(House house) {
-        User user = userRepository.findById(house.getUser().getId())
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + house.getUser().getId()));
+    public House createHouse(CreateHouseRequest request, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
+        House house = new House();
         house.setUser(user);
+        house.setCity(request.getCity());
+        house.setCommunityName(request.getCommunityName());
+        house.setBuildingNo(request.getBuildingNo());
+        house.setUnitNo(request.getUnitNo());
+        house.setRoomNo(request.getRoomNo());
+        house.setArea(request.getArea());
+        house.setLayoutType(request.getLayoutType());
+        house.setDecorationType(request.getDecorationType());
+        house.setFloorCount(request.getFloorCount());
 
         return houseRepository.save(house);
     }
+
 
 
     public List<House> getAllHouses() {
@@ -62,4 +75,9 @@ public class HouseService {
     public void deleteHouse(Long id) {
         houseRepository.deleteById(id);
     }
+
+    public List<House> getAllHousesByUserId(Long userId) {
+        return houseRepository.findAllByUserId(userId);
+    }
+
 }

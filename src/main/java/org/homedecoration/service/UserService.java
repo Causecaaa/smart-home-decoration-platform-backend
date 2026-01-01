@@ -1,6 +1,6 @@
 package org.homedecoration.service;
 
-import org.homedecoration.config.JwtUtil;
+import org.homedecoration.utils.JwtUtil;
 import org.homedecoration.dto.request.CreateUserRequest;
 import org.homedecoration.dto.request.UpdateProfileRequest;
 import org.homedecoration.dto.response.LoginResponse;

@@ -13,4 +13,6 @@ public interface HouseRepository extends JpaRepository<House, Long> {
     List<House> findByUserId(Long userId);
 
     void getHouseById(@NotNull Long houseId);
+
+    List<House> findAllByUserId(Long userId);
 }

@@ -1,4 +1,4 @@
-package org.homedecoration.config;
+package org.homedecoration.utils;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

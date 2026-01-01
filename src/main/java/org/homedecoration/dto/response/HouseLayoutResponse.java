@@ -8,15 +8,15 @@ import java.time.Instant;
 @Data
 public class HouseLayoutResponse {
 
-    private Long layoutId;
     private Long userId;
     private Long houseId;
+    private Long layoutId;
 
     private String layoutIntent;
     private String redesignNotes;
     private String layoutStatus;
-
     private Integer layoutVersion;
+
     private Instant createdAt;
     private Instant updatedAt;
 

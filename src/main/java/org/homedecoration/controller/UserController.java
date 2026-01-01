@@ -69,7 +69,7 @@ public class UserController {
 
 
 
-    @PutMapping("/update-profile/{id}")
+    @PutMapping("/{id}/update-profile")
     public ApiResponse<UserResponse> updateProfile(
             @PathVariable Long id,
             @Valid @RequestBody UpdateProfileRequest request) {
@@ -80,14 +80,14 @@ public class UserController {
 
 
     // 删除用户
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/{id}/delete")
     public ApiResponse<Void> deleteUser(@PathVariable Long id) {
         userService.deleteById(id);
         return ApiResponse.success(null);
     }
 
     // 修改用户状态（启用/禁用）
-    @PatchMapping("/update-status/{id}")
+    @PatchMapping("/{id}/update-status")
     public ApiResponse<UserResponse> updateUserStatus(@PathVariable Long id, @Valid @RequestParam User.Status status) {
         return ApiResponse.success(
                 UserResponse.toDTO(userService.updateStatus(id, status))
@@ -95,7 +95,7 @@ public class UserController {
     }
 
     // 修改用户角色
-    @PatchMapping("/update-role/{id}")
+    @PatchMapping("/{id}/update-role")
     public ApiResponse<UserResponse> updateUserRole(@PathVariable Long id, @Valid @RequestParam User.Role role) {
         return ApiResponse.success(
                 UserResponse.toDTO(userService.updateRole(id, role))

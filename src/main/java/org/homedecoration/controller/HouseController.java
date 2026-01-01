@@ -1,11 +1,14 @@
 package org.homedecoration.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.homedecoration.common.ApiResponse;
+import org.homedecoration.dto.request.CreateHouseRequest;
 import org.homedecoration.dto.request.UpdateHouseRequest;
 import org.homedecoration.dto.response.HouseResponse;
 import org.homedecoration.entity.House;
 import org.homedecoration.service.HouseService;
+import org.homedecoration.utils.JwtUtil;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,51 +18,58 @@ import java.util.List;
 public class HouseController {
 
     private final HouseService houseService;
+    private final JwtUtil jwtUtil;
 
-    public HouseController(HouseService houseService) {
+    public HouseController(HouseService houseService, JwtUtil jwtUtil) {
         this.houseService = houseService;
+        this.jwtUtil = jwtUtil;
     }
 
     // 新增房屋
-    @PostMapping("/create")
-    public ApiResponse<HouseResponse> createHouse(@Valid @RequestBody House house) {
+    @PostMapping("/create-house")
+    public ApiResponse<HouseResponse> createHouse(
+            @RequestBody @Valid CreateHouseRequest request,
+            HttpServletRequest httpRequest) {
+        Long userId = jwtUtil.getUserId(httpRequest.getHeader("Authorization").replace("Bearer ", ""));
         return ApiResponse.success(
-                HouseResponse.toDTO(houseService.createHouse(house))
+                HouseResponse.toDTO(houseService.createHouse(request, userId))
         );
     }
 
 
     // 查询当前用户所有房屋
-    @GetMapping("/get-all")
-    public ApiResponse<List<HouseResponse>> getAllHouses() {
-        List<HouseResponse> list = houseService.getAllHouses()
+    @GetMapping("/{userId}/get-all")
+    public ApiResponse<List<HouseResponse>> getAllHousesByUserId(@PathVariable Long userId) {
+        List<HouseResponse> list = houseService.getAllHousesByUserId(userId)
                 .stream()
                 .map(HouseResponse::toDTO)
                 .toList();
+
         return ApiResponse.success(list);
     }
 
+
     // 查询单个房屋
-    @GetMapping("/find/{id}")
-    public ApiResponse<HouseResponse> getHouseById(@PathVariable Long id) {
+    @GetMapping("/{houseId}/find")
+    public ApiResponse<HouseResponse> getHouseById(@PathVariable Long houseId) {
         return ApiResponse.success(
-                HouseResponse.toDTO(houseService.getHouseById(id))
+                HouseResponse.toDTO(houseService.getHouseById(houseId))
         );
     }
 
     // 更新房屋
-    @PutMapping("/update/{id}")
-    public ApiResponse<HouseResponse> updateHouse(@PathVariable Long id, @Valid @RequestBody UpdateHouseRequest request) {
+    @PutMapping("/{houseId}/update")
+    public ApiResponse<HouseResponse> updateHouse(@PathVariable Long houseId, @Valid @RequestBody UpdateHouseRequest request) {
         return ApiResponse.success(
-                HouseResponse.toDTO(houseService.updateHouse(request,id))
+                HouseResponse.toDTO(houseService.updateHouse(request, houseId))
         );
     }
 
 
     // 删除房屋
-    @DeleteMapping("/{id}")
-    public ApiResponse<String> deleteHouse(@PathVariable Long id) {
-        houseService.deleteHouse(id);
+    @DeleteMapping("/{houseId}")
+    public ApiResponse<String> deleteHouse(@PathVariable Long houseId) {
+        houseService.deleteHouse(houseId);
         return ApiResponse.success("删除成功");
     }
 }
