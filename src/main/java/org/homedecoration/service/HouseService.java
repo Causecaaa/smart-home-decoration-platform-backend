@@ -1,5 +1,6 @@
 package org.homedecoration.service;
 
+import org.homedecoration.dto.request.UpdateHouseRequest;
 import org.homedecoration.entity.House;
 import org.homedecoration.entity.User;
 import org.homedecoration.repository.HouseRepository;
@@ -27,9 +28,6 @@ public class HouseService {
 
         house.setUser(user);
 
-        house.setCreatedAt(Instant.now());
-        house.setUpdatedAt(Instant.now());
-
         return houseRepository.save(house);
     }
 
@@ -42,27 +40,19 @@ public class HouseService {
         return houseRepository.findById(id).orElse(null);
     }
 
-    public House updateHouse(House house) {
-        // 先查原来的房屋
-        House existing = houseRepository.findById(house.getId())
+    public House updateHouse(UpdateHouseRequest request, Long id) {
+        House existing = houseRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("House not found"));
 
-        // 更新字段（user、city、communityName ...）
-        if (house.getUser() != null && house.getUser().getId() != null) {
-            existing.setUser(userRepository.findById(house.getUser().getId())
-                    .orElseThrow(() -> new RuntimeException("User not found")));
-        }
-
-        existing.setCity(house.getCity());
-        existing.setCommunityName(house.getCommunityName());
-        existing.setBuildingNo(house.getBuildingNo());
-        existing.setUnitNo(house.getUnitNo());
-        existing.setRoomNo(house.getRoomNo());
-        existing.setArea(house.getArea());
-        existing.setLayoutType(house.getLayoutType());
-        existing.setFloorCount(house.getFloorCount());
-        existing.setDecorationType(house.getDecorationType());
-        existing.setUpdatedAt(Instant.now());
+        existing.setCity(request.getCity());
+        existing.setCommunityName(request.getCommunityName());
+        existing.setBuildingNo(request.getBuildingNo());
+        existing.setUnitNo(request.getUnitNo());
+        existing.setRoomNo(request.getRoomNo());
+        existing.setArea(request.getArea());
+        existing.setLayoutType(request.getLayoutType());
+        existing.setFloorCount(request.getFloorCount());
+        existing.setDecorationType(request.getDecorationType());
 
         return houseRepository.save(existing);
     }
