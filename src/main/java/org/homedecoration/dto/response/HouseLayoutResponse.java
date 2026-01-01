@@ -8,7 +8,7 @@ import java.time.Instant;
 @Data
 public class HouseLayoutResponse {
 
-    private Long id;
+    private Long layoutId;
     private Long userId;
     private Long houseId;
 
@@ -16,13 +16,13 @@ public class HouseLayoutResponse {
     private String redesignNotes;
     private String layoutStatus;
 
-    private String layoutVersion;
+    private Integer layoutVersion;
     private Instant createdAt;
     private Instant updatedAt;
 
     public static HouseLayoutResponse toDTO(HouseLayout layout) {
         HouseLayoutResponse dto = new HouseLayoutResponse();
-        dto.setId(layout.getId());
+        dto.setLayoutId(layout.getId());
         dto.setUserId(layout.getHouse().getUser().getId());
         dto.setHouseId(layout.getHouse().getId());
         dto.setLayoutIntent(String.valueOf(layout.getLayoutIntent()));

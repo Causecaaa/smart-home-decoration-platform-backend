@@ -5,7 +5,8 @@ import lombok.Data;
 import org.homedecoration.entity.HouseLayout;
 
 @Data
-public class CreateUserLayoutRequest {
+public class CreateLayoutRequest {
+    private Long userId;
 
     @NotNull
     private Long houseId;

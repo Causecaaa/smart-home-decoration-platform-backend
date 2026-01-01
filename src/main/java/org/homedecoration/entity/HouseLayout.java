@@ -43,7 +43,7 @@ public class HouseLayout {
     private String redesignNotes;
 
     @Column(name = "layout_version", length = 20)
-    private String layoutVersion;
+    private Integer layoutVersion;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "layout_status", nullable = false, length = 20)

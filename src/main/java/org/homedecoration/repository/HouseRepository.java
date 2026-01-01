@@ -1,5 +1,6 @@
 package org.homedecoration.repository;
 
+import jakarta.validation.constraints.NotNull;
 import org.homedecoration.entity.House;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -10,4 +11,6 @@ import java.util.List;
 public interface HouseRepository extends JpaRepository<House, Long> {
     // 按用户查房屋
     List<House> findByUserId(Long userId);
+
+    void getHouseById(@NotNull Long houseId);
 }
