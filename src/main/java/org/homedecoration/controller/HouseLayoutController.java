@@ -1,5 +1,6 @@
 package org.homedecoration.controller;
 
+import org.homedecoration.common.ApiResponse;
 import org.homedecoration.dto.request.CreateUserLayoutRequest;
 import org.homedecoration.dto.response.HouseLayoutResponse;
 import org.homedecoration.entity.HouseLayout;
@@ -20,11 +21,13 @@ public class HouseLayoutController {
     }
 
     @PostMapping("/create-by-user")
-    public HouseLayoutResponse createByUser(@RequestBody CreateUserLayoutRequest dto) {
+    public ApiResponse<HouseLayoutResponse> createByUser(@RequestBody CreateUserLayoutRequest dto) {
 
         HouseLayout layout = houseLayoutService.createByUser(dto);
 
-        return HouseLayoutResponse.toDTO(layout);
+        return ApiResponse.success(
+                HouseLayoutResponse.toDTO(layout)
+        );
     }
 
 

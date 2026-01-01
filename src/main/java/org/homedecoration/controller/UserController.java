@@ -5,6 +5,7 @@ import org.homedecoration.dto.request.CreateUserRequest;
 import org.homedecoration.dto.request.LoginRequest;
 import org.homedecoration.dto.request.UpdateProfileRequest;
 import org.homedecoration.common.ApiResponse;
+import org.homedecoration.dto.response.LoginResponse;
 import org.homedecoration.dto.response.UserResponse;
 import org.homedecoration.entity.User;
 import org.homedecoration.service.UserService;
@@ -31,9 +32,9 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ApiResponse<UserResponse> login(@RequestBody LoginRequest request) {
-        return ApiResponse.success(UserResponse.toDTO(
-                userService.login(request.getEmail(), request.getPassword()))
+    public ApiResponse<LoginResponse> login(@RequestBody LoginRequest request) {
+        return ApiResponse.success(
+                userService.loginAndGenerateToken(request.getEmail(), request.getPassword())
         );
     }
 

@@ -4,6 +4,7 @@ import lombok.Data;
 import org.homedecoration.entity.House;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Data
 public class HouseResponse {
@@ -18,6 +19,8 @@ public class HouseResponse {
     private String layoutType;
     private Integer floorCount;
     private House.DecorationType decorationType;
+    private Instant createdAt;
+    private Instant updatedAt;
 
     public static HouseResponse toDTO(House house) {
         HouseResponse response = new HouseResponse();
@@ -32,6 +35,8 @@ public class HouseResponse {
         response.setLayoutType(house.getLayoutType());
         response.setFloorCount(house.getFloorCount());
         response.setDecorationType(house.getDecorationType());
+        response.setCreatedAt(house.getCreatedAt());
+        response.setUpdatedAt(house.getUpdatedAt());
         return response;
     }
 }

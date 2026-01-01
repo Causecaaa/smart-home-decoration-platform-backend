@@ -1,7 +1,10 @@
 package org.homedecoration.service;
 
+import org.homedecoration.config.JwtUtil;
 import org.homedecoration.dto.request.CreateUserRequest;
 import org.homedecoration.dto.request.UpdateProfileRequest;
+import org.homedecoration.dto.response.LoginResponse;
+import org.homedecoration.dto.response.UserResponse;
 import org.homedecoration.entity.User;
 import org.homedecoration.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,11 +17,14 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     public UserService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder,
+                       JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
     }
 
     public List<User> getAll() {
@@ -73,13 +79,24 @@ public class UserService {
 
     public User login(String email, String password) {
         User user = getByEmail(email);
-
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new IllegalArgumentException("password incorrect");
         }
-
         return user;
     }
+
+    public LoginResponse loginAndGenerateToken(String email, String password) {
+        User user = login(email, password);
+
+        String token = jwtUtil.generateToken(user.getId(), user.getEmail());
+
+        LoginResponse response = new LoginResponse();
+        response.setToken(token);
+        response.setUser(UserResponse.toDTO(user));
+
+        return response;
+    }
+
 
 
     public User updateProfile(Long userId, UpdateProfileRequest request) {
