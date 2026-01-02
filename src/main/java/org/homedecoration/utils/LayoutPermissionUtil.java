@@ -2,18 +2,31 @@ package org.homedecoration.utils;
 
 import org.homedecoration.entity.HouseLayout;
 import org.homedecoration.entity.User;
+import org.homedecoration.exception.AccessDeniedException;
 import org.springframework.stereotype.Component;
 
 @Component
 public class LayoutPermissionUtil {
 
-    public boolean canEdit(User operator, HouseLayout layout, Long userId) {
-        return switch (operator.getRole()) {
-            case USER -> layout.getLayoutStatus() == HouseLayout.LayoutStatus.DRAFT
-                    && layout.getHouse().getUser().getId().equals(userId);
-            case DESIGNER -> layout.getLayoutStatus() == HouseLayout.LayoutStatus.SUBMITTED;
-            default -> false;
-        };
+    public void checkCanEdit(User operator, HouseLayout layout, Long userId) {
+
+        switch (operator.getRole()) {
+            case USER -> {
+                if (layout.getLayoutStatus() != HouseLayout.LayoutStatus.DRAFT) {
+                    throw new AccessDeniedException("Layout is not in DRAFT status");
+                }
+                if (!layout.getHouse().getUser().getId().equals(userId)) {
+                    throw new AccessDeniedException("You are not the owner of this layout");
+                }
+            }
+            case DESIGNER -> {
+                if (layout.getLayoutStatus() != HouseLayout.LayoutStatus.SUBMITTED) {
+                    throw new AccessDeniedException("Layout is not in SUBMITTED status");
+                }
+            }
+            default -> throw new AccessDeniedException("Unknown role");
+        }
     }
 }
+
 

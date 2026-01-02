@@ -50,10 +50,14 @@ public class HouseLayoutImageService {
         User operator = userService.getById(userId);
 
         // 3️⃣ 权限校验
-        boolean canEdit = layoutPermissionUtil.canEdit(operator, layout, userId);
-        if (!canEdit) {
-            throw new RuntimeException("No permission to upload image");
-        }
+        System.out.println("===== canEdit check =====");
+        System.out.println("operator_role = " + operator.getRole());
+        System.out.println("house_id = " + layout.getHouse().getId());
+        System.out.println("user_id = " + userId);
+
+        layoutPermissionUtil.checkCanEdit(operator, layout, userId);
+
+
 
         // 4️⃣ 确定图片类型
         HouseLayoutImage.ImageType type = request.getImageType();
@@ -94,37 +98,6 @@ public class HouseLayoutImageService {
         image.setImageType(type);
         // 如果上传了文件，就保存本地路径，否则使用前端传的 imageUrl
         image.setImageUrl(filename != null ? "/uploads/" + filename : request.getImageUrl());
-
-        return houseLayoutImageRepository.save(image);
-    }
-
-
-    public List<HouseLayoutImage> getImagesByLayoutId(Long layoutId) {
-        return houseLayoutImageRepository.findByLayout_Id(layoutId);
-    }
-
-    @Transactional
-    public void deleteImage(Long imageId, Long userId) {
-        HouseLayoutImage image = getImageById(imageId);
-        User operator = userService.getById(userId);
-
-        if (!layoutPermissionUtil.canEdit(operator, image.getLayout(), userId)) {
-            throw new RuntimeException("No permission to delete this image");
-        }
-
-        houseLayoutImageRepository.delete(image);
-    }
-
-    @Transactional
-    public HouseLayoutImage updateImage(Long imageId, CreateLayoutImageRequest request, Long userId) {
-        HouseLayoutImage image = getImageById(imageId);
-        User operator = userService.getById(userId);
-
-        if (!layoutPermissionUtil.canEdit(operator, image.getLayout(), userId)) {
-            throw new RuntimeException("No permission to update this image");
-        }
-
-        image.setImageDesc(request.getImageDesc());
 
         return houseLayoutImageRepository.save(image);
     }

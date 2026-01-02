@@ -88,9 +88,7 @@ public class HouseLayoutService {
         HouseLayout layout = getLayoutById(layoutId);
         User operator = userService.getById(userId);
 
-        if (!layoutPermissionUtil.canEdit(operator, layout, userId)) {
-            throw new RuntimeException("No permission to update this layout");
-        }
+        layoutPermissionUtil.checkCanEdit(operator, layout, userId);
 
         layout.setLayoutIntent(request.getLayoutIntent());
         layout.setRedesignNotes(request.getRedesignNotes());
@@ -104,9 +102,7 @@ public class HouseLayoutService {
         HouseLayout layout = getLayoutById(layoutId);   // 获取布局
         User operator = userService.getById(userId);   // 获取操作用户
 
-        if (!layoutPermissionUtil.canEdit(operator, layout, userId)) {
-            throw new RuntimeException("No permission to delete this layout");
-        }
+        layoutPermissionUtil.checkCanEdit(operator, layout, userId);
 
         houseLayoutRepository.delete(layout);
     }

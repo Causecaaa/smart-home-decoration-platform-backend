@@ -42,5 +42,7 @@ public class GlobalExceptionHandler {
     public ApiResponse<Void> handleRuntimeException(RuntimeException e) {
         return ApiResponse.fail(500, e.getMessage());
     }
+
+
 }
 
