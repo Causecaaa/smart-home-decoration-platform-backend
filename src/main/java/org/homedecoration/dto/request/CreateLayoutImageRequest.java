@@ -13,7 +13,7 @@ public class CreateLayoutImageRequest {
     private MultipartFile file;
 
     @NotBlank
-    private String imageUrl; // 图片 URL（前端上传到 OSS / 七牛 / 本地之后传 URL）
+    private String imageUrl;
 
     @NotNull
     private HouseLayoutImage.ImageType imageType; // USER / DESIGNER

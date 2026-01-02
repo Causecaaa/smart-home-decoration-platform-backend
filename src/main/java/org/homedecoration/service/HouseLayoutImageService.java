@@ -16,6 +16,7 @@ import java.util.List;
 
 @Service
 public class HouseLayoutImageService {
+    private final HouseLayoutService houseLayoutService;
     @Value("${file.upload-dir}")
     private String uploadDir;
 
@@ -27,11 +28,13 @@ public class HouseLayoutImageService {
     public HouseLayoutImageService(HouseLayoutRepository layoutRepository,
                                    UserService userService,
                                    LayoutPermissionUtil layoutPermissionUtil,
-                                   HouseLayoutImageRepository houseLayoutImageRepository) {
+                                   HouseLayoutImageRepository houseLayoutImageRepository,
+                                   HouseLayoutService houseLayoutService) {
         this.layoutRepository = layoutRepository;
         this.userService = userService;
         this.layoutPermissionUtil = layoutPermissionUtil;
         this.houseLayoutImageRepository = houseLayoutImageRepository;
+        this.houseLayoutService = houseLayoutService;
     }
 
 
@@ -40,26 +43,19 @@ public class HouseLayoutImageService {
                 .orElseThrow(() -> new RuntimeException("Image not found with id: " + imageId));
     }
 
+    public List<HouseLayoutImage> getImagesByLayoutId(Long layoutId) {
+        return houseLayoutImageRepository.findByLayout_Id(layoutId);
+    }
+
     @Transactional
     public HouseLayoutImage createImage(Long layoutId, CreateLayoutImageRequest request, Long userId) {
-        // 1️⃣ 查找布局
-        HouseLayout layout = layoutRepository.findById(layoutId)
-                .orElseThrow(() -> new RuntimeException("Layout not found"));
 
-        // 2️⃣ 查找操作用户
+        HouseLayout layout = houseLayoutService.getLayoutById(layoutId);
         User operator = userService.getById(userId);
-
-        // 3️⃣ 权限校验
-        System.out.println("===== canEdit check =====");
-        System.out.println("operator_role = " + operator.getRole());
-        System.out.println("house_id = " + layout.getHouse().getId());
-        System.out.println("user_id = " + userId);
 
         layoutPermissionUtil.checkCanEdit(operator, layout, userId);
 
 
-
-        // 4️⃣ 确定图片类型
         HouseLayoutImage.ImageType type = request.getImageType();
         switch (operator.getRole()) {
             case USER -> {
@@ -77,7 +73,6 @@ public class HouseLayoutImageService {
             default -> throw new RuntimeException("Unknown role");
         }
 
-        // 5️⃣ 保存文件到本地
         String filename = null;
         if (request.getFile() != null && !request.getFile().isEmpty()) {
             try {
@@ -91,13 +86,35 @@ public class HouseLayoutImageService {
             }
         }
 
-        // 6️⃣ 构建实体并保存
         HouseLayoutImage image = new HouseLayoutImage();
         image.setLayout(layout);
         image.setImageDesc(request.getImageDesc());
         image.setImageType(type);
         // 如果上传了文件，就保存本地路径，否则使用前端传的 imageUrl
         image.setImageUrl(filename != null ? "/uploads/" + filename : request.getImageUrl());
+
+        return houseLayoutImageRepository.save(image);
+    }
+
+
+    @Transactional
+    public void deleteImage(Long imageId, Long userId) {
+        HouseLayoutImage image = getImageById(imageId);
+        User operator = userService.getById(userId);
+
+        layoutPermissionUtil.checkCanEdit(operator, image.getLayout(), userId);
+
+        houseLayoutImageRepository.delete(image);
+    }
+
+    @Transactional
+    public HouseLayoutImage updateImage(Long imageId, CreateLayoutImageRequest request, Long userId) {
+        HouseLayoutImage image = getImageById(imageId);
+        User operator = userService.getById(userId);
+
+        layoutPermissionUtil.checkCanEdit(operator, image.getLayout(), userId);
+
+        image.setImageDesc(request.getImageDesc());
 
         return houseLayoutImageRepository.save(image);
     }

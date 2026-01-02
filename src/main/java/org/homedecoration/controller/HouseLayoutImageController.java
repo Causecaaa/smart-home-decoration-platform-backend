@@ -50,6 +50,34 @@ public class HouseLayoutImageController {
         return ApiResponse.success(HouseLayoutImageResponse.toDTO(image));
     }
 
+    // 查询 layout 下所有图片
+    @GetMapping("/{layoutId}/images")
+    public ApiResponse<List<HouseLayoutImageResponse>> getImages(@PathVariable Long layoutId) {
+        List<HouseLayoutImageResponse> list = houseLayoutImageService.getImagesByLayoutId(layoutId)
+                .stream()
+                .map(HouseLayoutImageResponse::toDTO)
+                .collect(Collectors.toList());
+        return ApiResponse.success(list);
+    }
 
+    // 删除图片
+    @DeleteMapping("/image/{imageId}")
+    public ApiResponse<Void> deleteImage(@PathVariable Long imageId, HttpServletRequest httpRequest) {
+        Long userId = jwtUtil.getUserId(httpRequest);
+        houseLayoutImageService.deleteImage(imageId, userId);
+        return ApiResponse.success(null);
+    }
+
+    // 修改图片描述
+    @PutMapping("/image/{imageId}")
+    public ApiResponse<HouseLayoutImageResponse> updateImage(
+            @PathVariable Long imageId,
+            @RequestBody @Valid CreateLayoutImageRequest request,
+            HttpServletRequest httpRequest) {
+
+        Long userId = jwtUtil.getUserId(httpRequest);
+        HouseLayoutImage image = houseLayoutImageService.updateImage(imageId, request, userId);
+        return ApiResponse.success(HouseLayoutImageResponse.toDTO(image));
+    }
 
 }
