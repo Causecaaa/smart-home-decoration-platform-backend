@@ -11,3 +11,6 @@ spring:
         format_sql: true
 server:
   port: 8181
+
+file:
+  upload-dir: D:/CODE/smart-home-decoration-platform/images

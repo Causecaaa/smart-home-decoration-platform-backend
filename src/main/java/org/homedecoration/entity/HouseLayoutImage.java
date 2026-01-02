@@ -13,6 +13,10 @@ import java.time.Instant;
 @Entity
 @Table(name = "house_layout_image")
 public class HouseLayoutImage {
+    public enum ImageType {
+        ORIGINAL, STRUCTURE, FURNITURE, USER
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
@@ -27,7 +31,7 @@ public class HouseLayoutImage {
     private String imageUrl;
 
     @Column(name = "image_type", length = 20)
-    private String imageType;
+    private ImageType imageType;
 
     @Column(name = "image_desc")
     private String imageDesc;

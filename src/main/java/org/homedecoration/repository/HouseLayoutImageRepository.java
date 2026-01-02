@@ -9,8 +9,9 @@ import java.util.List;
 @Repository
 public interface HouseLayoutImageRepository extends JpaRepository<HouseLayoutImage, Long> {
     // 根据布局查图片列表
-    List<HouseLayoutImage> findByLayoutId(Long layoutId);
+    List<HouseLayoutImage> findByLayout_Id(Long layoutId);
 
     // 可按图片类型查
-    List<HouseLayoutImage> findByLayoutIdAndImageType(Long layoutId, String imageType);
+    List<HouseLayoutImage> findByLayoutIdAndImageType(Long layoutId, HouseLayoutImage.ImageType imageType);
+
 }
