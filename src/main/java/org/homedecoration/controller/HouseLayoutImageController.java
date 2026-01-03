@@ -28,11 +28,11 @@ public class HouseLayoutImageController {
     }
 
     // 上传图片
-    @PostMapping("/{layoutId}/images")
+    @PostMapping("/{layoutId}/create")
     public ApiResponse<HouseLayoutImageResponse> createImage(
             @PathVariable Long layoutId,
             @RequestParam(value = "file", required = false) MultipartFile file,
-            @RequestParam(value = "imageType", required = false) HouseLayoutImage.ImageType imageType,
+            @Valid @RequestParam(value = "imageType", required = false) HouseLayoutImage.ImageType imageType,
             @RequestParam(value = "imageDesc", required = false) String imageDesc,
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
             HttpServletRequest httpRequest) throws IOException {
@@ -51,7 +51,7 @@ public class HouseLayoutImageController {
     }
 
     // 查询 layout 下所有图片
-    @GetMapping("/{layoutId}/images")
+    @GetMapping("/{layoutId}/get")
     public ApiResponse<List<HouseLayoutImageResponse>> getImages(@PathVariable Long layoutId) {
         List<HouseLayoutImageResponse> list = houseLayoutImageService.getImagesByLayoutId(layoutId)
                 .stream()
@@ -61,7 +61,7 @@ public class HouseLayoutImageController {
     }
 
     // 删除图片
-    @DeleteMapping("/image/{imageId}")
+    @DeleteMapping("/{imageId}/delete")
     public ApiResponse<Void> deleteImage(@PathVariable Long imageId, HttpServletRequest httpRequest) {
         Long userId = jwtUtil.getUserId(httpRequest);
         houseLayoutImageService.deleteImage(imageId, userId);
@@ -69,7 +69,7 @@ public class HouseLayoutImageController {
     }
 
     // 修改图片描述
-    @PutMapping("/image/{imageId}")
+    @PutMapping("/{imageId}/update")
     public ApiResponse<HouseLayoutImageResponse> updateImage(
             @PathVariable Long imageId,
             @RequestBody @Valid CreateLayoutImageRequest request,

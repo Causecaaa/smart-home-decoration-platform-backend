@@ -10,7 +10,10 @@ import java.time.Instant;
 @Getter
 @Setter
 public class HouseLayoutImageResponse {
-    private Long id;
+    private Long userId;
+    private Long houseId;
+    private Long layoutId;
+    private Long imageId;
     private String imageUrl;
     private ImageType imageType;
     private String imageDesc;
@@ -19,7 +22,10 @@ public class HouseLayoutImageResponse {
 
     public static HouseLayoutImageResponse toDTO(HouseLayoutImage image) {
         HouseLayoutImageResponse dto = new HouseLayoutImageResponse();
-        dto.setId(image.getId());
+        dto.setUserId(image.getLayout().getHouse().getUser().getId());
+        dto.setHouseId(image.getLayout().getHouse().getId());
+        dto.setLayoutId(image.getLayout().getId());
+        dto.setImageId(image.getId());
         dto.setImageUrl(image.getImageUrl());
         dto.setImageType(image.getImageType() != null ? image.getImageType() : ImageType.ORIGINAL);
         dto.setImageDesc(image.getImageDesc());

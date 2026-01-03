@@ -30,6 +30,7 @@ public class HouseLayoutImage {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "image_type", length = 20)
     private ImageType imageType;
 
