@@ -1,44 +1,67 @@
 package org.homedecoration.furnitureScheme.entity;
 
 import jakarta.persistence.*;
-import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.*;
-import org.homedecoration.layout.entity.HouseLayout;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+import org.homedecoration.furnitureImage.entity.FurnitureImage;
+import org.homedecoration.houseRoom.entity.HouseRoom;
 
 import java.time.Instant;
+import java.util.List;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "furniture_scheme")
 public class FurnitureScheme {
+
+    public enum SchemeStatus {
+        SUBMITTED,
+        CONFIRMED,
+        ARCHIVED
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "scheme_id", nullable = false)
     private Long id;
 
+    /**
+     * 所属房间（一个房间可有多轮方案）
+     */
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "layout_id", nullable = false)
-    private HouseLayout layout;
+    @JoinColumn(name = "room_id", nullable = false)
+    private HouseRoom room;
 
+    /**
+     * 设计师（方案一创建就必须确定）
+     */
+    @Column(name = "designer_id", nullable = false)
+    private Long designerId;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "scheme_status", length = 20)
-    private String schemeStatus;
+    private SchemeStatus schemeStatus = SchemeStatus.SUBMITTED;
 
     @Column(name = "scheme_version", length = 20)
-    private String schemeVersion;
+    private Integer schemeVersion; // v1 / v2 / v3
 
-    @Column(name = "confirmed_furniture_image_id")
-    private Long confirmedFurnitureImageId;
+    /**
+     * 家具设计图片（一房多图）
+     */
+    @OneToMany(mappedBy = "scheme", fetch = FetchType.LAZY)
+    private List<FurnitureImage> images;
 
     @CreationTimestamp
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at")
     private Instant updatedAt;
-
 }

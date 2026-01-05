@@ -42,23 +42,12 @@ updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 CONSTRAINT fk_layout_house FOREIGN KEY (house_id) REFERENCES house(house_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='房屋布局信息表';
 
--- 设计方案（家具布局）
-CREATE TABLE design_scheme (
-scheme_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '设计方案主键',
-layout_id BIGINT NOT NULL COMMENT '所属布局',
-scheme_status VARCHAR(20) COMMENT '状态：draft / confirmed',
-scheme_version VARCHAR(20) COMMENT '方案版本号（v1 / v2）',
-confirmed_furniture_image_id BIGINT COMMENT '确认的家具布局图ID',
-created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-CONSTRAINT fk_design_layout FOREIGN KEY (layout_id) REFERENCES house_layout(layout_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='设计方案表';
-
--- 房间信息
+-- 房间信息表（HouseRoom）
 CREATE TABLE house_room (
 room_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '房间主键',
+layout_id BIGINT NOT NULL COMMENT '所属布局方案（Layout = CONFIRMED 后有效）',
+designer_id BIGINT NOT NULL COMMENT '上传该房间方案的设计师ID',
 floor_no INT COMMENT '所在楼层（1 / 2 / 3）',
-layout_id BIGINT NOT NULL COMMENT '所属布局方案',
 room_type VARCHAR(20) COMMENT '空间类型（bedroom / living_room / kitchen / bathroom）',
 room_name VARCHAR(50) COMMENT '空间名称（主卧 / 次卧 / 客厅）',
 area DECIMAL(6,2) COMMENT '空间面积（㎡）',
@@ -67,6 +56,34 @@ has_balcony BOOLEAN COMMENT '是否带阳台',
 notes VARCHAR(255) COMMENT '用户补充说明',
 CONSTRAINT fk_room_layout FOREIGN KEY (layout_id) REFERENCES house_layout(layout_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='房间信息表';
+
+
+CREATE TABLE furniture_scheme (
+scheme_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '家具设计方案主键',
+room_id BIGINT NOT NULL COMMENT '所属房间',
+designer_id BIGINT NOT NULL COMMENT '设计师ID',
+scheme_status VARCHAR(20) COMMENT '状态：draft / submitted / confirmed',
+scheme_version VARCHAR(20) COMMENT '方案版本号（v1 / v2 / v3）',
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+CONSTRAINT fk_scheme_room
+FOREIGN KEY (room_id)
+REFERENCES house_room(room_id)
+ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='家具设计方案表（房间级）';
+
+CREATE TABLE furniture_image (
+image_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '家具设计图ID',
+scheme_id BIGINT NOT NULL COMMENT '所属家具设计方案',
+image_url VARCHAR(255) NOT NULL COMMENT '图片地址',
+image_type VARCHAR(20) COMMENT 'DESIGN / CONFIRMED',
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+CONSTRAINT fk_image_scheme
+FOREIGN KEY (scheme_id)
+REFERENCES furniture_scheme(scheme_id)
+ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='家具设计图片表';
+
 
 -- 布局或设计图片
 CREATE TABLE house_layout_image (

@@ -16,7 +16,8 @@ public interface BillRepository extends JpaRepository<Bill, Long> {
     List<Bill> findByPayeeId(Long payeeId);
 
     // 根据状态查询账单
-    List<Bill> findByPaid(Boolean paid);
+    List<Bill> findByPayStatus(Bill.PayStatus payStatus);
+
 
     // 根据业务对象查询账单
     List<Bill> findByBizTypeAndBizId(Bill.BizType bizType, Long bizId);

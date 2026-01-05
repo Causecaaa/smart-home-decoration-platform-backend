@@ -13,9 +13,10 @@ import java.time.Instant;
 public class Bill {
 
     public enum BizType {
-        LAYOUT,         // 布局设计
-        FURNITURE,      // 家具设计
-        CONSTRUCTION    // 施工阶段
+        HOUSE,
+        LAYOUT,
+        FURNITURE,
+        CONSTRUCTION
     }
 
     public enum PayStatus {
