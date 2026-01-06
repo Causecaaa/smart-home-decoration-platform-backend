@@ -1,10 +1,10 @@
 package org.homedecoration.user.controller;
 
 import jakarta.validation.Valid;
+import org.homedecoration.common.response.ApiResponse;
 import org.homedecoration.user.dto.request.CreateUserRequest;
 import org.homedecoration.user.dto.request.LoginRequest;
 import org.homedecoration.user.dto.request.UpdateProfileRequest;
-import org.homedecoration.common.response.ApiResponse;
 import org.homedecoration.user.dto.response.LoginResponse;
 import org.homedecoration.user.dto.response.UserResponse;
 import org.homedecoration.user.entity.User;

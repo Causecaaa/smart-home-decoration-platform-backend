@@ -3,11 +3,11 @@ package org.homedecoration.house.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.homedecoration.common.response.ApiResponse;
+import org.homedecoration.common.utils.JwtUtil;
 import org.homedecoration.house.dto.request.CreateHouseRequest;
 import org.homedecoration.house.dto.request.UpdateHouseRequest;
 import org.homedecoration.house.dto.response.HouseResponse;
 import org.homedecoration.house.service.HouseService;
-import org.homedecoration.common.utils.JwtUtil;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

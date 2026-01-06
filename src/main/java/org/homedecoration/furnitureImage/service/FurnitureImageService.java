@@ -2,7 +2,6 @@ package org.homedecoration.furnitureImage.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.homedecoration.furnitureImage.dto.request.CreateFurnitureImageRequest;
 import org.homedecoration.furnitureImage.entity.FurnitureImage;
 import org.homedecoration.furnitureImage.repository.FurnitureImageRepository;
 import org.homedecoration.furnitureScheme.entity.FurnitureScheme;

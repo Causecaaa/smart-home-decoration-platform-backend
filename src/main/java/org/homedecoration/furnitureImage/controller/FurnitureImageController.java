@@ -4,7 +4,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.homedecoration.common.response.ApiResponse;
 import org.homedecoration.common.utils.JwtUtil;
-import org.homedecoration.furnitureImage.dto.request.CreateFurnitureImageRequest;
 import org.homedecoration.furnitureImage.dto.response.FurnitureImageResponse;
 import org.homedecoration.furnitureImage.entity.FurnitureImage;
 import org.homedecoration.furnitureImage.service.FurnitureImageService;

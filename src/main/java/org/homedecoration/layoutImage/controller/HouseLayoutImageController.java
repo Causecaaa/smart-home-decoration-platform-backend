@@ -3,11 +3,11 @@ package org.homedecoration.layoutImage.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.homedecoration.common.response.ApiResponse;
+import org.homedecoration.common.utils.JwtUtil;
 import org.homedecoration.layoutImage.dto.request.CreateLayoutImageRequest;
 import org.homedecoration.layoutImage.dto.response.HouseLayoutImageResponse;
 import org.homedecoration.layoutImage.entity.HouseLayoutImage;
 import org.homedecoration.layoutImage.service.HouseLayoutImageService;
-import org.homedecoration.common.utils.JwtUtil;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 

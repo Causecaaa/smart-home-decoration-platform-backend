@@ -2,7 +2,6 @@ package org.homedecoration.furnitureImage.dto.request;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.homedecoration.furnitureImage.entity.FurnitureImage;
 import org.springframework.web.multipart.MultipartFile;
 
 @Getter

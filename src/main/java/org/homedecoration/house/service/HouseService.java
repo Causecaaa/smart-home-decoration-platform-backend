@@ -3,8 +3,8 @@ package org.homedecoration.house.service;
 import org.homedecoration.house.dto.request.CreateHouseRequest;
 import org.homedecoration.house.dto.request.UpdateHouseRequest;
 import org.homedecoration.house.entity.House;
-import org.homedecoration.user.entity.User;
 import org.homedecoration.house.repository.HouseRepository;
+import org.homedecoration.user.entity.User;
 import org.homedecoration.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
