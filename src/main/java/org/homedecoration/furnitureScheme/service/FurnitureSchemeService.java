@@ -95,4 +95,5 @@ public class FurnitureSchemeService {
         FurnitureScheme scheme = getById(schemeId);
         schemeRepository.delete(scheme);
     }
+
 }

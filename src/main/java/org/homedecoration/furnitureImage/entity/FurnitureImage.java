@@ -16,19 +16,11 @@ import java.time.Instant;
 @Table(name = "furniture_image")
 public class FurnitureImage {
 
-    public enum ImageType {
-        DESIGN,
-        CONFIRMED
-    }
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "image_id", nullable = false)
     private Long id;
 
-    /**
-     * 所属家具设计方案
-     */
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "scheme_id", nullable = false)
@@ -37,9 +29,6 @@ public class FurnitureImage {
     @Column(name = "image_url", nullable = false, length = 255)
     private String imageUrl;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "image_type", length = 20)
-    private ImageType imageType = ImageType.DESIGN;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

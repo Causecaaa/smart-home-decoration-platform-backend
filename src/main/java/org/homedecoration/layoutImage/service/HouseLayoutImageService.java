@@ -95,7 +95,7 @@ public class HouseLayoutImageService {
         image.setImageDesc(request.getImageDesc());
         image.setImageType(type);
         // 如果上传了文件，就保存本地路径，否则使用前端传的 imageUrl
-        image.setImageUrl(filename != null ? "/uploads/" + filename : request.getImageUrl());
+        image.setImageUrl(filename != null ? "/uploads/layout/" + filename : request.getImageUrl());
 
         return houseLayoutImageRepository.save(image);
     }

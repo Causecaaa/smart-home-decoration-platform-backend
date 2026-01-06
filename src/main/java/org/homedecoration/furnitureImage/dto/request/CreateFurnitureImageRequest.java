@@ -11,10 +11,4 @@ public class CreateFurnitureImageRequest {
 
     private MultipartFile file;
 
-    private FurnitureImage.ImageType imageType;
-
-    /**
-     * 前端直接传的图片 URL（可选）
-     */
-    private String imageUrl;
 }
