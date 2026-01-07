@@ -1,7 +1,6 @@
 package org.homedecoration.identity.designer.service;
 
 import jakarta.validation.Valid;
-import org.homedecoration.common.exception.BusinessException;
 import org.homedecoration.identity.designer.dto.request.CreateDesignerRequest;
 import org.homedecoration.identity.designer.dto.request.UpdateDesignerProfileRequest;
 import org.homedecoration.identity.designer.entity.Designer;
@@ -12,7 +11,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 

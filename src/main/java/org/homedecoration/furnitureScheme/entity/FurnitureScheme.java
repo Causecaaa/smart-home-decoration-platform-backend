@@ -38,9 +38,6 @@ public class FurnitureScheme {
     @JoinColumn(name = "room_id", nullable = false)
     private HouseRoom room;
 
-    /**
-     * 设计师（方案一创建就必须确定）
-     */
     @Column(name = "designer_id", nullable = false)
     private Long designerId;
 

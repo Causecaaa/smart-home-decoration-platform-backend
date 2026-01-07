@@ -5,12 +5,12 @@ import org.homedecoration.common.utils.LayoutPermissionUtil;
 import org.homedecoration.house.entity.House;
 import org.homedecoration.house.repository.HouseRepository;
 import org.homedecoration.house.service.HouseService;
+import org.homedecoration.identity.user.entity.User;
+import org.homedecoration.identity.user.service.UserService;
 import org.homedecoration.layout.dto.request.CreateLayoutRequest;
 import org.homedecoration.layout.dto.request.UpdateLayoutRequest;
 import org.homedecoration.layout.entity.HouseLayout;
 import org.homedecoration.layout.repository.HouseLayoutRepository;
-import org.homedecoration.identity.user.entity.User;
-import org.homedecoration.identity.user.service.UserService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,7 +20,6 @@ import java.util.Optional;
 public class HouseLayoutService {
 
     private final HouseLayoutRepository houseLayoutRepository;
-    private final HouseRepository houseRepository;
     private final HouseService houseService;
     private final UserService userService;
     private final LayoutPermissionUtil layoutPermissionUtil;
@@ -29,7 +28,6 @@ public class HouseLayoutService {
                               HouseService houseService, UserService userService,
                               LayoutPermissionUtil layoutPermissionUtil) {
         this.houseLayoutRepository = houseLayoutRepository;
-        this.houseRepository = houseRepository;
         this.houseService = houseService;
         this.userService = userService;
         this.layoutPermissionUtil = layoutPermissionUtil;
@@ -113,12 +111,13 @@ public class HouseLayoutService {
     @Transactional
     public HouseLayout confirmLayout(Long layoutId, Long userId) {
         HouseLayout layout = getLayoutById(layoutId);
-        User operator = userService.getById(userId);
 
+        // 权限检查
         if (!layout.getHouse().getUser().getId().equals(userId)) {
             throw new RuntimeException("No permission to confirm this layout");
         }
 
+        // 检查是否已有已确认的 layout
         Optional<HouseLayout> existingConfirmed = houseLayoutRepository
                 .findTopByHouseIdAndLayoutStatus(layout.getHouse().getId(), HouseLayout.LayoutStatus.CONFIRMED);
 
@@ -126,8 +125,20 @@ public class HouseLayoutService {
             throw new RuntimeException("This house already has a confirmed layout");
         }
 
+        // 将其他 layout 标记为 ARCHIVED
+        List<HouseLayout> otherLayouts = houseLayoutRepository
+                .findByHouseIdAndIdNot(layout.getHouse().getId(), layoutId);
+
+        for (HouseLayout other : otherLayouts) {
+            other.setLayoutStatus(HouseLayout.LayoutStatus.ARCHIVED);
+        }
+        houseLayoutRepository.saveAll(otherLayouts);
+
+        // 确认当前 layout
         layout.setLayoutStatus(HouseLayout.LayoutStatus.CONFIRMED);
         return houseLayoutRepository.save(layout);
     }
+
+
 
 }
