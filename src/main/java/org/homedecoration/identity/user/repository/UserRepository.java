@@ -1,7 +1,7 @@
-package org.homedecoration.user.repository;
+package org.homedecoration.identity.user.repository;
 
 import jakarta.validation.constraints.Size;
-import org.homedecoration.user.entity.User;
+import org.homedecoration.identity.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

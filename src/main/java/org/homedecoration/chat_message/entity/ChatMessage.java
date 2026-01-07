@@ -14,9 +14,7 @@ import java.time.Instant;
 public class ChatMessage {
     public enum ContentType {
         TEXT,
-        IMAGE,
-        FILE,
-        LINK
+        IMAGE
     }
 
     @Id
@@ -34,7 +32,7 @@ public class ChatMessage {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "content_type", nullable = false, length = 20)
-    private ContentType contentType = ContentType.TEXT; // 消息类型：TEXT / IMAGE / FILE / LINK
+    private ContentType contentType = ContentType.TEXT; // 消息类型：TEXT / IMAGE
 
     @CreationTimestamp
     @Column(name = "timestamp", nullable = false)

@@ -1,4 +1,4 @@
-package org.homedecoration.user.entity;
+package org.homedecoration.identity.user.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -53,6 +53,9 @@ public class User {
     @Email(message = "邮箱格式不正确")
     @Column(name = "email", length = 100)
     private String email;
+
+    @Column(name = "avatar_url", length = 255)
+    private String avatarUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = 20)

@@ -1,7 +1,7 @@
-package org.homedecoration.user.dto.response;
+package org.homedecoration.identity.user.dto.response;
 
 import lombok.Data;
-import org.homedecoration.user.entity.User;
+import org.homedecoration.identity.user.entity.User;
 
 import java.time.Instant;
 

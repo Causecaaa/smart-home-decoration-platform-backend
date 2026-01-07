@@ -9,8 +9,8 @@ import org.homedecoration.layout.dto.request.CreateLayoutRequest;
 import org.homedecoration.layout.dto.request.UpdateLayoutRequest;
 import org.homedecoration.layout.entity.HouseLayout;
 import org.homedecoration.layout.repository.HouseLayoutRepository;
-import org.homedecoration.user.entity.User;
-import org.homedecoration.user.service.UserService;
+import org.homedecoration.identity.user.entity.User;
+import org.homedecoration.identity.user.service.UserService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

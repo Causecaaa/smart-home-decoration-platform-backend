@@ -1,4 +1,4 @@
-package org.homedecoration.user.dto.response;
+package org.homedecoration.identity.user.dto.response;
 
 import lombok.Data;
 

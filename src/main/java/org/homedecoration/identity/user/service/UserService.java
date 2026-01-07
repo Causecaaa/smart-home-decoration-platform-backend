@@ -1,19 +1,29 @@
-package org.homedecoration.user.service;
+package org.homedecoration.identity.user.service;
 
+import jakarta.transaction.Transactional;
 import org.homedecoration.common.utils.JwtUtil;
-import org.homedecoration.user.dto.request.CreateUserRequest;
-import org.homedecoration.user.dto.request.UpdateProfileRequest;
-import org.homedecoration.user.dto.response.LoginResponse;
-import org.homedecoration.user.dto.response.UserResponse;
-import org.homedecoration.user.entity.User;
-import org.homedecoration.user.repository.UserRepository;
+import org.homedecoration.identity.user.dto.request.CreateUserRequest;
+import org.homedecoration.identity.user.dto.request.UpdateProfileRequest;
+import org.homedecoration.identity.user.dto.response.LoginResponse;
+import org.homedecoration.identity.user.dto.response.UserResponse;
+import org.homedecoration.identity.user.entity.User;
+import org.homedecoration.identity.user.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 @Service
 public class UserService {
+
+    @Value("${file.upload-dir}")
+    private String uploadDir;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -128,5 +138,27 @@ public class UserService {
     public void deleteById(Long id) {
         getById(id);
         userRepository.deleteById(id);
+    }
+
+    @Transactional
+    public User uploadAvatar(Long userId, MultipartFile file) throws IOException {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("必须上传文件");
+        }
+
+        String originalName = file.getOriginalFilename();
+        String filename = System.currentTimeMillis() + "_" + originalName;
+
+        Path path = Paths.get(uploadDir + "/avatar", filename);
+        Files.createDirectories(path.getParent());
+        file.transferTo(path.toFile());
+
+        user.setAvatarUrl("/uploads/avatar/" + filename);
+
+        return userRepository.save(user);
     }
 }

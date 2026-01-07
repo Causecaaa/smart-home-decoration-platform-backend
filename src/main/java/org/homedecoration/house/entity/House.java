@@ -9,7 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.homedecoration.user.entity.User;
+import org.homedecoration.identity.user.entity.User;
 
 import java.math.BigDecimal;
 import java.time.Instant;

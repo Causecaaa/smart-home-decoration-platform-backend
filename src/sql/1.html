@@ -5,11 +5,35 @@ CREATE TABLE `user` (
 `password` VARCHAR(255) NOT NULL COMMENT '加密后的密码',
 `phone` VARCHAR(20) UNIQUE COMMENT '手机号',
 `email` VARCHAR(100) UNIQUE COMMENT '邮箱',
+`avatar_url` VARCHAR(255) COMMENT '用户头像',
 `role` VARCHAR(20) NOT NULL COMMENT '角色：USER / MERCHANT / DESIGNER / INSPECTOR / ADMIN',
 `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态：0-禁用 1-正常 2-注销',
 `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
 `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统用户表';
+
+
+-- 设计师扩展信息表
+CREATE TABLE `designer` (
+`user_id` BIGINT PRIMARY KEY COMMENT '用户ID（与 user 表共享主键）',
+
+`real_name` VARCHAR(50) COMMENT '真实姓名',
+`experience_years` INT COMMENT '从业年限',
+`style` VARCHAR(100) COMMENT '擅长风格',
+`bio` VARCHAR(500) COMMENT '设计师简介',
+
+`rating` DOUBLE COMMENT '设计师评分',
+`order_count` INT DEFAULT 0 COMMENT '累计接单数',
+
+`verify_status` VARCHAR(20) DEFAULT 'PENDING' COMMENT '审核状态',
+`enabled` TINYINT DEFAULT 1 COMMENT '是否启用',
+
+CONSTRAINT `fk_designer_user`
+FOREIGN KEY (`user_id`) REFERENCES `user`(`id`)
+ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='设计师扩展信息表';
+
+
 
 -- 房屋基础信息
 CREATE TABLE house (

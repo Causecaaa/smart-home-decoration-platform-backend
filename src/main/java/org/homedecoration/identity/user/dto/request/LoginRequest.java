@@ -1,4 +1,4 @@
-package org.homedecoration.user.dto.request;
+package org.homedecoration.identity.user.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;

@@ -2,7 +2,7 @@ package org.homedecoration.common.utils;
 
 import org.homedecoration.common.exception.AccessDeniedException;
 import org.homedecoration.layout.entity.HouseLayout;
-import org.homedecoration.user.entity.User;
+import org.homedecoration.identity.user.entity.User;
 import org.springframework.stereotype.Component;
 
 @Component

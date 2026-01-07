@@ -4,14 +4,18 @@ import org.homedecoration.chat_message.entity.ChatMessage;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
 
     /**
      * 查询两个用户之间的聊天记录（双向）
      */
-    List<ChatMessage> findBySenderIdAndReceiverIdOrSenderIdAndReceiverIdOrderByTimestampAsc(
+    List<ChatMessage> findBySenderIdAndReceiverIdOrReceiverIdAndSenderIdOrderByTimestampAsc(
             Long senderId1, Long receiverId1,
             Long senderId2, Long receiverId2
     );
+
+    Optional<ChatMessage> findById(Long id);
+
 }
