@@ -75,7 +75,7 @@ public class HouseLayoutService {
 
     public List<HouseLayout> getLayoutsByHouseId(Long houseId) {
         houseService.getHouseById(houseId);
-        return houseLayoutRepository.findByHouseIdOrderByLayoutVersionDesc(houseId);
+        return houseLayoutRepository.findByHouseIdOrderByLayoutVersionAsc(houseId);
     }
 
     public HouseLayout getLayoutById(Long layoutId) {

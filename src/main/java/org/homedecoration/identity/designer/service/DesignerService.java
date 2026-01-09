@@ -107,11 +107,12 @@ public class DesignerService {
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
+        // 空或空字符串都走 findByEnabledTrue
         if (keyword == null || keyword.isBlank()) {
             return designerRepository.findByEnabledTrue(sort);
         } else {
-            // 模糊匹配 realName 或 style
             return designerRepository.findByEnabledTrueAndKeyword(keyword, sort);
         }
     }
+
 }

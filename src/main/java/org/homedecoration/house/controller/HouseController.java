@@ -29,7 +29,7 @@ public class HouseController {
     public ApiResponse<HouseResponse> createHouse(
             @RequestBody @Valid CreateHouseRequest request,
             HttpServletRequest httpRequest) {
-        Long userId = jwtUtil.getUserId(httpRequest.getHeader("Authorization").replace("Bearer ", ""));
+        Long userId = jwtUtil.getUserId(httpRequest);
         return ApiResponse.success(
                 HouseResponse.toDTO(houseService.createHouse(request, userId))
         );

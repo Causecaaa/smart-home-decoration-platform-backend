@@ -19,4 +19,6 @@ public interface HouseLayoutRepository extends JpaRepository<HouseLayout, Long> 
     Optional<HouseLayout> findTopByHouseIdAndLayoutStatus(Long id, HouseLayout.LayoutStatus layoutStatus);
 
     List<HouseLayout> findByHouseIdAndIdNot(Long id, Long layoutId);
+
+    List<HouseLayout> findByHouseIdOrderByLayoutVersionAsc(Long houseId);
 }
