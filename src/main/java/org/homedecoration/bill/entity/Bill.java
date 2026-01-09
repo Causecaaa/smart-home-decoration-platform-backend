@@ -24,7 +24,7 @@ public class Bill {
         DEPOSIT_PAID,  // 已付定金
         PAID           // 已付清（尾款完成）
     }
-
+//
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
