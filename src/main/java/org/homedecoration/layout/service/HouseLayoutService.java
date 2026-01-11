@@ -38,6 +38,7 @@ public class HouseLayoutService {
         HouseLayout layout = new HouseLayout();
         layout.setHouse(house);
         layout.setLayoutIntent(request.getLayoutIntent());
+        layout.setDesignerId(request.getDesignerId());
         layout.setRedesignNotes(request.getRedesignNotes());
         layout.setLayoutStatus(HouseLayout.LayoutStatus.DRAFT);
         layout.setLayoutVersion(0);
@@ -67,6 +68,7 @@ public class HouseLayoutService {
                     .orElse(0) + 1;
 
             layout.setLayoutVersion(nextVersion);
+            layout.setDesignerId(user.getId());
             layout.setLayoutStatus(HouseLayout.LayoutStatus.SUBMITTED);
         }
 

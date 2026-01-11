@@ -8,11 +8,19 @@ import java.math.BigDecimal;
 @Data
 public class CreateBillRequest {
 
-    private Bill.BizType bizType; // 业务类型：LAYOUT / FURNITURE / CONSTRUCTION
+    private Bill.BizType bizType;
 
-    private Long bizId;           // 可选，关联具体业务对象ID
+    private Long bizId;
 
-    private BigDecimal amount;    // 本阶段金额
+    /**
+     * 总金额
+     */
+    private BigDecimal amount;
 
-    private String remark;        // 可选备注
+    /**
+     * 定金金额
+     */
+    private BigDecimal depositAmount;
+
+    private String remark;
 }

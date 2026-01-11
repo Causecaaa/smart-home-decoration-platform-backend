@@ -1,12 +1,16 @@
 package org.homedecoration.identity.designer.service;
 
 import jakarta.validation.Valid;
+import org.homedecoration.bill.entity.Bill;
+import org.homedecoration.bill.repository.BillRepository;
 import org.homedecoration.identity.designer.dto.request.CreateDesignerRequest;
 import org.homedecoration.identity.designer.dto.request.UpdateDesignerProfileRequest;
 import org.homedecoration.identity.designer.entity.Designer;
 import org.homedecoration.identity.designer.repository.DesignerRepository;
 import org.homedecoration.identity.user.entity.User;
 import org.homedecoration.identity.user.service.UserService;
+import org.homedecoration.layout.entity.HouseLayout;
+import org.homedecoration.layout.repository.HouseLayoutRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,12 +24,18 @@ public class DesignerService {
 
     private final DesignerRepository designerRepository;
     private final UserService userService;
+    private final HouseLayoutRepository houseLayoutRepository;
+    private final BillRepository billRepository;
 
     public DesignerService(
             DesignerRepository designerRepository,
-            UserService userService) {
+            UserService userService,
+            HouseLayoutRepository layoutRepository,
+            BillRepository billRepository) {
         this.designerRepository = designerRepository;
         this.userService = userService;
+        this.houseLayoutRepository = layoutRepository;
+        this.billRepository = billRepository;
     }
 
     /**
@@ -113,6 +123,29 @@ public class DesignerService {
         } else {
             return designerRepository.findByEnabledTrueAndKeyword(keyword, sort);
         }
+    }
+
+    public List<HouseLayout> getPendingLayoutsForDesigner(Long designerId) {
+        // 第一步：查自己负责的 DRAFT 布局
+        List<HouseLayout> draftLayouts = houseLayoutRepository.findByDesignerIdAndLayoutStatus(
+                designerId, HouseLayout.LayoutStatus.DRAFT
+        );
+
+        // 第二步：过滤掉未付定金的订单
+        List<Bill> paidBills = billRepository.findByBizTypeAndPayStatusAndPayeeIdOrderByCreatedAtAsc(
+                Bill.BizType.LAYOUT,
+                Bill.PayStatus.DEPOSIT_PAID,
+                designerId
+        );
+
+        // 保留只有在已付定金账单里的布局
+        List<Long> paidLayoutIds = paidBills.stream()
+                .map(Bill::getBizId)
+                .toList();
+
+        draftLayouts.removeIf(layout -> !paidLayoutIds.contains(layout.getId()));
+
+        return draftLayouts;
     }
 
 }

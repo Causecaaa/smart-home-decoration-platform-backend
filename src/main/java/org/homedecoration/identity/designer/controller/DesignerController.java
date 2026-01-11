@@ -9,6 +9,8 @@ import org.homedecoration.identity.designer.dto.request.UpdateDesignerProfileReq
 import org.homedecoration.identity.designer.dto.response.DesignerDetailResponse;
 import org.homedecoration.identity.designer.dto.response.DesignerSimpleResponse;
 import org.homedecoration.identity.designer.service.DesignerService;
+import org.homedecoration.layout.entity.HouseLayout;
+import org.homedecoration.layout.service.HouseLayoutService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -96,6 +98,11 @@ public class DesignerController {
         );
     }
 
-
+    @GetMapping("/pending")
+    public ApiResponse<List<HouseLayout>> getPendingLayouts(HttpServletRequest request) {
+        Long designerId = jwtUtil.getUserId(request);  // token获取设计师ID
+        List<HouseLayout> pendingLayouts = designerService.getPendingLayoutsForDesigner(designerId);
+        return ApiResponse.success(pendingLayouts);
+    }
 
 }

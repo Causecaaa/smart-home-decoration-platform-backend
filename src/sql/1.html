@@ -133,19 +133,29 @@ updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 CONSTRAINT fk_image_layout FOREIGN KEY (layout_id) REFERENCES house_layout(layout_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='布局/设计图片表';
 
--- 通用账单表
+-- 通用账单表（支持定金 + 尾款）
 CREATE TABLE `bill` (
 `id` BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '账单ID',
-`biz_type` VARCHAR(20) NOT NULL COMMENT '业务类型：LAYOUT / FURNITURE / CONSTRUCTION',
-`biz_id` BIGINT NULL COMMENT '关联业务对象ID，可为空',
-`amount` DECIMAL(10,2) NOT NULL COMMENT '本阶段金额',
-`paid` TINYINT NOT NULL DEFAULT 0 COMMENT '是否支付：0-未支付 1-已支付',
+`biz_type` VARCHAR(20) NOT NULL COMMENT '业务类型：HOUSE / LAYOUT / FURNITURE / CONSTRUCTION',
+`biz_id` BIGINT NOT NULL COMMENT '关联业务对象ID（如 layout_id / scheme_id）',
+
+`amount` DECIMAL(10,2) NOT NULL COMMENT '总金额',
+`deposit_amount` DECIMAL(10,2) NOT NULL COMMENT '定金金额',
+`pay_status` VARCHAR(20) NOT NULL DEFAULT 'UNPAID'
+COMMENT '支付状态：UNPAID / DEPOSIT_PAID / PAID',
+
 `payer_id` BIGINT NOT NULL COMMENT '支付方用户ID',
-`payee_id` BIGINT NOT NULL COMMENT '收款方用户ID（平台/设计师/商家）',
-`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '账单生成时间',
-`paid_at` DATETIME NULL COMMENT '支付时间，由支付时填写',
-`remark` VARCHAR(255) NULL COMMENT '备注或说明'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通用账单表';
+`payee_id` BIGINT NOT NULL COMMENT '收款方ID（设计师 / 商家 / 平台）',
+`deposit_paid_at` DATETIME NULL COMMENT '定金支付时间',
+`paid_at` DATETIME NULL COMMENT '尾款支付完成时间',
+
+`remark` VARCHAR(255) NULL COMMENT '备注，例如：第1轮布局设计费',
+`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '账单创建时间',
+
+-- 防止同一业务阶段重复建账单
+UNIQUE KEY `uk_biz_type_biz_id` (`biz_type`, `biz_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通用账单表（支持分阶段支付）';
+
 
 
 -- 聊天消息表

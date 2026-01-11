@@ -22,7 +22,10 @@ public class BillController {
         this.jwtUtil = jwtUtil;
     }
 
-    // 新建账单
+    /**
+     * 系统创建阶段性账单（非用户手动创建）
+     * 例如：布局设计定金账单
+     */
     @PostMapping("/create")
     public ApiResponse<BillResponse> createBill(
             HttpServletRequest httpRequest,
@@ -34,10 +37,10 @@ public class BillController {
     }
 
 
-    @GetMapping("/{BillId}/get")
-    public ApiResponse<BillResponse> getBill(@Valid @PathVariable Long BillId) {
+    @GetMapping("/{billId}/get")
+    public ApiResponse<BillResponse> getBill(@PathVariable Long billId) {
         return ApiResponse.success(
-                BillResponse.toDTO(billService.getBill(BillId))
+                BillResponse.toDTO(billService.getBill(billId))
         );
     }
 

@@ -25,19 +25,24 @@ public class HouseLayoutController {
         this.jwtUtil = jwtUtil;
     }
 
+    // 用户创建提要求
     @PostMapping("/create-draft")
-    public ApiResponse<HouseLayoutResponse> createDraft(@RequestBody CreateLayoutRequest request) {
+    public ApiResponse<HouseLayoutResponse> createDraft(
+            @RequestBody CreateLayoutRequest request,
+            HttpServletRequest httpRequest) {
+        request.setUserId(jwtUtil.getUserId(httpRequest));
         return ApiResponse.success(
                 HouseLayoutResponse.toDTO(houseLayoutService.createDraft(request))
         );
     }
-
+    // 创建confirmed 或者 设计师计划
     @PostMapping("/create-layout")
     public ApiResponse<HouseLayoutResponse> createLayout(
             @RequestBody @Valid CreateLayoutRequest request,
             HttpServletRequest httpRequest) {
-        String token = httpRequest.getHeader("Authorization").replace("Bearer ", "");
-        request.setUserId(jwtUtil.getUserId(token));
+        System.out.println("**************************************************");
+        System.out.println(httpRequest);
+        request.setUserId(jwtUtil.getUserId(httpRequest));
         return ApiResponse.success(
                 HouseLayoutResponse.toDTO(
                         houseLayoutService.createLayout(request)
