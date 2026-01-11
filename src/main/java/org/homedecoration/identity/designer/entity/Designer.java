@@ -15,10 +15,6 @@ public class Designer {
     @Column(name = "user_id")
     private Long userId;
 
-    /**
-     * 与 User 一对一关联
-     * 设计师本质仍然是用户
-     */
     @OneToOne
     @MapsId
     @JoinColumn(name = "user_id")

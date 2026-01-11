@@ -9,7 +9,7 @@ import java.time.Instant;
 
 @Entity
 @Data
-@Table(name = "admin_user")
+@Table(name = "admin")
 public class Admin {
     @Id
     @Column(name = "user_id")

@@ -16,4 +16,6 @@ public interface DesignerRepository extends JpaRepository<Designer, Long> {
             "(LOWER(d.realName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "OR LOWER(d.style) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     List<Designer> findByEnabledTrueAndKeyword(@Param("keyword") String keyword, Sort sort);
+
+    List<Designer> findByVerifyStatus(Designer.VerifyStatus status);
 }
