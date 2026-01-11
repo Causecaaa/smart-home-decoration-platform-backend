@@ -12,7 +12,7 @@ CREATE TABLE `user` (
 `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统用户表';
 
-
+house_room
 -- 设计师扩展信息表
 CREATE TABLE `designer` (
 `user_id` BIGINT PRIMARY KEY COMMENT '用户ID（与 user 表共享主键）',
@@ -32,6 +32,18 @@ CONSTRAINT `fk_designer_user`
 FOREIGN KEY (`user_id`) REFERENCES `user`(`id`)
 ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='设计师扩展信息表';
+
+
+-- 管理员扩展信息表
+CREATE TABLE `admin` (
+`user_id` BIGINT PRIMARY KEY COMMENT '用户ID（与 user 表共享主键）',
+
+`created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '成为管理员时间',
+
+CONSTRAINT `fk_admin_user`
+FOREIGN KEY (`user_id`) REFERENCES `user`(`id`)
+ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='管理员扩展信息表';
 
 
 
