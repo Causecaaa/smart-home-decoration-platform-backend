@@ -2,6 +2,7 @@ package org.homedecoration.layout.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import lombok.Data;
 import org.homedecoration.common.response.ApiResponse;
 import org.homedecoration.common.utils.JwtUtil;
 import org.homedecoration.layout.dto.request.CreateLayoutRequest;
@@ -110,6 +111,28 @@ public class HouseLayoutController {
 
         HouseLayout confirmedLayout = houseLayoutService.confirmLayout(layoutId, userId);
         return ApiResponse.success(HouseLayoutResponse.toDTO(confirmedLayout));
+    }
+
+    @Data
+    public static class ConfirmFurnitureDesignerRequest {
+        private Long furnitureDesignerId;
+    }
+
+    @PutMapping("/{layoutId}/confirm/furnitureDesigner")
+    public ApiResponse<HouseLayoutResponse> confirmFurnitureDesigner(
+            @PathVariable Long layoutId,
+            @RequestBody ConfirmFurnitureDesignerRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        Long userId = jwtUtil.getUserId(httpRequest);
+
+        HouseLayout updatedLayout = houseLayoutService.confirmFurnitureDesigner(
+                layoutId,
+                request.getFurnitureDesignerId(),
+                userId
+        );
+
+        return ApiResponse.success(HouseLayoutResponse.toDTO(updatedLayout));
     }
 
 

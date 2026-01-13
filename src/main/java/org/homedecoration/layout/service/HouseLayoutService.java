@@ -1,10 +1,14 @@
 package org.homedecoration.layout.service;
 
 import jakarta.transaction.Transactional;
+import org.homedecoration.bill.entity.Bill;
+import org.homedecoration.bill.repository.BillRepository;
+import org.homedecoration.common.exception.BusinessException;
 import org.homedecoration.common.utils.LayoutPermissionUtil;
 import org.homedecoration.house.entity.House;
 import org.homedecoration.house.repository.HouseRepository;
 import org.homedecoration.house.service.HouseService;
+import org.homedecoration.identity.designer.repository.DesignerRepository;
 import org.homedecoration.identity.user.entity.User;
 import org.homedecoration.identity.user.service.UserService;
 import org.homedecoration.layout.dto.request.CreateLayoutRequest;
@@ -13,6 +17,7 @@ import org.homedecoration.layout.entity.HouseLayout;
 import org.homedecoration.layout.repository.HouseLayoutRepository;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,14 +28,19 @@ public class HouseLayoutService {
     private final HouseService houseService;
     private final UserService userService;
     private final LayoutPermissionUtil layoutPermissionUtil;
+    private final DesignerRepository designerRepository;
+    private final BillRepository billRepository;
 
     public HouseLayoutService(HouseLayoutRepository houseLayoutRepository, HouseRepository houseRepository,
                               HouseService houseService, UserService userService,
-                              LayoutPermissionUtil layoutPermissionUtil) {
+                              LayoutPermissionUtil layoutPermissionUtil, DesignerRepository designerRepository,
+                              BillRepository billRepository) {
         this.houseLayoutRepository = houseLayoutRepository;
         this.houseService = houseService;
         this.userService = userService;
         this.layoutPermissionUtil = layoutPermissionUtil;
+        this.designerRepository = designerRepository;
+        this.billRepository = billRepository;
     }
 
     public HouseLayout createDraft(CreateLayoutRequest request) {
@@ -141,6 +151,69 @@ public class HouseLayoutService {
         return houseLayoutRepository.save(layout);
     }
 
+    @Transactional
+    public HouseLayout confirmFurnitureDesigner(Long layoutId, Long furnitureDesignerId, Long userId) {
+        HouseLayout layout = houseLayoutRepository.findById(layoutId)
+                .orElseThrow(() -> new BusinessException("Layout不存在"));
 
+        // 可以加权限校验：只有房主可以选择家具设计师
+        if (!layout.getHouse().getUser().getId().equals(userId)) {
+            throw new BusinessException("无权操作该布局");
+        }
 
+        // 只能在 CONFIRMED 状态后选择家具设计师
+        if (layout.getLayoutStatus() != HouseLayout.LayoutStatus.CONFIRMED) {
+            throw new BusinessException("请先确认布局方案");
+        }
+
+        if (!designerRepository.existsById(furnitureDesignerId)) {
+            throw new BusinessException("选择的家具设计师不存在");
+        }
+
+        layout.setFurnitureDesignerId(furnitureDesignerId);
+        HouseLayout savedLayout = houseLayoutRepository.save(layout);
+
+        boolean billExists = billRepository.existsByBizTypeAndBizId(
+                Bill.BizType.FURNITURE,
+                layoutId
+        );
+        if (!billExists) {
+            // 计算金额（你可以封装成单独方法）
+            BigDecimal totalAmount = calculateFurnitureTotal(layout);
+            BigDecimal depositAmount = calculateFurnitureDeposit(layout);
+
+            Bill furnitureBill = new Bill();
+            furnitureBill.setBizType(Bill.BizType.FURNITURE);
+            furnitureBill.setBizId(layoutId);
+            furnitureBill.setAmount(totalAmount);
+            furnitureBill.setDepositAmount(depositAmount);
+            furnitureBill.setPayStatus(Bill.PayStatus.UNPAID);
+            furnitureBill.setPayerId(layout.getHouse().getUser().getId());
+            furnitureBill.setPayeeId(furnitureDesignerId);
+            furnitureBill.setRemark("家具阶段账单");
+
+            billRepository.save(furnitureBill);
+        }
+
+        return savedLayout;
+    }
+
+    public BigDecimal calculateFurnitureTotal(HouseLayout layout) {
+        if (layout == null || layout.getHouse() == null) {
+            throw new BusinessException("房屋信息缺失，无法计算金额");
+        }
+
+        // 示例逻辑：按房屋面积计算，每平米 200 元
+        BigDecimal area = layout.getHouse().getArea(); // 假设 House 有 getArea()
+        BigDecimal pricePerSquare = new BigDecimal("200"); // 每平米价格，可调整
+        return area.multiply(pricePerSquare);
+    }
+
+    public BigDecimal calculateFurnitureDeposit(HouseLayout layout) {
+        BigDecimal total = calculateFurnitureTotal(layout);
+
+        // 示例逻辑：定金为总金额的 30%
+        BigDecimal depositRate = new BigDecimal("0.3");
+        return total.multiply(depositRate).setScale(2, BigDecimal.ROUND_HALF_UP);
+    }
 }

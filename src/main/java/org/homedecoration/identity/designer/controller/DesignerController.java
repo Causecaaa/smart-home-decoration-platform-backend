@@ -9,6 +9,7 @@ import org.homedecoration.identity.designer.dto.request.UpdateDesignerProfileReq
 import org.homedecoration.identity.designer.dto.response.DesignerDetailResponse;
 import org.homedecoration.identity.designer.dto.response.DesignerSimpleResponse;
 import org.homedecoration.identity.designer.service.DesignerService;
+import org.homedecoration.layout.dto.response.HouseLayoutResponse;
 import org.homedecoration.layout.entity.HouseLayout;
 import org.homedecoration.layout.service.HouseLayoutService;
 import org.springframework.web.bind.annotation.*;
@@ -98,11 +99,18 @@ public class DesignerController {
         );
     }
 
-    @GetMapping("/pending")
+    @GetMapping("/layouts")
     public ApiResponse<List<HouseLayout>> getPendingLayouts(HttpServletRequest request) {
         Long designerId = jwtUtil.getUserId(request);  // token获取设计师ID
         List<HouseLayout> pendingLayouts = designerService.getPendingLayoutsForDesigner(designerId);
         return ApiResponse.success(pendingLayouts);
+    }
+
+    @GetMapping("/furniture/layouts")
+    public ApiResponse<List<HouseLayout>> getPendingFurnitureLayouts(HttpServletRequest request) {
+        Long designerId = jwtUtil.getUserId(request);  // token 获取设计师 ID
+        List<HouseLayout> layouts = designerService.getPendingFurnitureLayoutsForDesigner(designerId);
+        return ApiResponse.success(layouts);
     }
 
 }

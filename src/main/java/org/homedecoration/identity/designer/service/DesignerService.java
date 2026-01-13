@@ -148,4 +148,28 @@ public class DesignerService {
         return draftLayouts;
     }
 
+    public List<HouseLayout> getPendingFurnitureLayoutsForDesigner(Long designerId) {
+        // 第一步：查自己负责的 CONFIRMED 布局（已选家具设计师）
+        List<HouseLayout> confirmedLayouts = houseLayoutRepository.findByFurnitureDesignerIdAndLayoutStatus(
+                designerId,
+                HouseLayout.LayoutStatus.CONFIRMED
+        );
+
+        // 第二步：过滤掉已经全额支付的家具阶段账单
+        List<Bill> paidBills = billRepository.findByBizTypeAndPayStatusAndPayeeIdOrderByCreatedAtAsc(
+                Bill.BizType.FURNITURE,
+                Bill.PayStatus.PAID,  // 已完成支付的
+                designerId
+        );
+
+        // 保留未支付尾款的布局
+        List<Long> paidLayoutIds = paidBills.stream()
+                .map(Bill::getBizId)
+                .toList();
+
+        confirmedLayouts.removeIf(layout -> paidLayoutIds.contains(layout.getId()));
+
+        return confirmedLayouts;
+    }
+
 }

@@ -13,10 +13,9 @@ public class CrossConfig implements WebMvcConfigurer {
          */
         registry.addMapping("/**")
                 .allowedOriginPatterns("*")
-                .allowedMethods("GET","HEAD","POST","PUT","DELETE","OPTIONS")
+                .allowedMethods("GET","HEAD","POST","PUT","DELETE","OPTIONS","PATCH")
                 .allowCredentials(true)
                 .maxAge(3600)
                 .allowedHeaders("*");
     }
-    //////dasdasdasdasdad
 }
