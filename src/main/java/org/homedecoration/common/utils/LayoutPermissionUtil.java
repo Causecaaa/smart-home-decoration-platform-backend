@@ -12,9 +12,11 @@ public class LayoutPermissionUtil {
 
         switch (operator.getRole()) {
             case USER -> {
-                if (layout.getLayoutStatus() != HouseLayout.LayoutStatus.DRAFT) {
-                    throw new AccessDeniedException("Layout is not in DRAFT status");
+                if (layout.getLayoutStatus() != HouseLayout.LayoutStatus.DRAFT &&
+                        layout.getLayoutStatus() != HouseLayout.LayoutStatus.SUBMITTED) {
+                    throw new AccessDeniedException("Layout can only be modified in DRAFT or SUBMITTED status");
                 }
+
                 if (!layout.getHouse().getUser().getId().equals(userId)) {
                     throw new AccessDeniedException("You are not the owner of this layout");
                 }

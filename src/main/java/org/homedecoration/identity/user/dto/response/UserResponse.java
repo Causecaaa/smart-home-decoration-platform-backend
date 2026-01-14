@@ -13,6 +13,7 @@ public class UserResponse {
     private String phone;
     private User.Role role;
     private User.Status status;
+    private String avatar_url;
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -24,6 +25,7 @@ public class UserResponse {
         dto.setPhone(user.getPhone());
         dto.setRole(user.getRole());
         dto.setStatus(user.getStatus());
+        dto.setAvatar_url(user.getAvatarUrl());
         dto.setCreatedAt(user.getCreatedAt());
         dto.setUpdatedAt(user.getUpdatedAt());
         return dto;

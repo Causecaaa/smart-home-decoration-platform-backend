@@ -64,8 +64,8 @@ public class HouseLayoutImageService {
         switch (operator.getRole()) {
             case USER -> {
                 if (type == null) type = HouseLayoutImage.ImageType.ORIGINAL;
-                else if (type != HouseLayoutImage.ImageType.ORIGINAL && type != HouseLayoutImage.ImageType.USER) {
-                    throw new RuntimeException("Users can only upload ORIGINAL or USER images");
+                else if (type != HouseLayoutImage.ImageType.ORIGINAL && type != HouseLayoutImage.ImageType.STRUCTURE) {
+                    throw new RuntimeException("Users can only upload ORIGINAL or STRUCTURE images");
                 }
             }
             case DESIGNER -> {
@@ -82,7 +82,7 @@ public class HouseLayoutImageService {
             try {
                 String originalName = request.getFile().getOriginalFilename();
                 filename = System.currentTimeMillis() + "_" + originalName;
-                Path path = Paths.get(uploadDir, filename);
+                Path path = Paths.get(uploadDir, "layout", filename);
                 Files.createDirectories(path.getParent());
                 request.getFile().transferTo(path.toFile());
             } catch (Exception e) {

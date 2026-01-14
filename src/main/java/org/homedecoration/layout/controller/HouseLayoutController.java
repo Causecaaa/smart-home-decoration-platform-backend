@@ -26,7 +26,7 @@ public class HouseLayoutController {
         this.jwtUtil = jwtUtil;
     }
 
-    // 用户创建提要求
+    // 用户REDESIGN 创建提要求
     @PostMapping("/create-draft")
     public ApiResponse<HouseLayoutResponse> createDraft(
             @RequestBody CreateLayoutRequest request,
@@ -36,7 +36,7 @@ public class HouseLayoutController {
                 HouseLayoutResponse.toDTO(houseLayoutService.createDraft(request))
         );
     }
-    // 创建confirmed 或者 设计师计划
+    // 用户KEEP_ORIGINAL 创建confirmed 或者 设计师计划
     @PostMapping("/create-layout")
     public ApiResponse<HouseLayoutResponse> createLayout(
             @RequestBody @Valid CreateLayoutRequest request,

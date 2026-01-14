@@ -67,7 +67,7 @@ public class HouseLayoutService {
 
         if (user.getRole() == User.Role.USER) {
             layout.setLayoutVersion(1);
-            layout.setLayoutStatus(HouseLayout.LayoutStatus.CONFIRMED);
+            layout.setLayoutStatus(HouseLayout.LayoutStatus.SUBMITTED);
         }
 
         if (user.getRole() == User.Role.DESIGNER) {

@@ -37,6 +37,17 @@ public class HouseController {
 
 
     // 查询当前用户所有房屋
+    @GetMapping("/get-all")
+    public ApiResponse<List<HouseResponse>> getAllHousesByUserId(HttpServletRequest httpRequest) {
+        List<HouseResponse> list = houseService.getAllHousesByUserId(jwtUtil.getUserId(httpRequest))
+                .stream()
+                .map(HouseResponse::toDTO)
+                .toList();
+
+        return ApiResponse.success(list);
+    }
+
+    // 查询用户所有房屋
     @GetMapping("/{userId}/get-all")
     public ApiResponse<List<HouseResponse>> getAllHousesByUserId(@PathVariable Long userId) {
         List<HouseResponse> list = houseService.getAllHousesByUserId(userId)
@@ -58,17 +69,20 @@ public class HouseController {
 
     // 更新房屋
     @PutMapping("/{houseId}/update")
-    public ApiResponse<HouseResponse> updateHouse(@PathVariable Long houseId, @Valid @RequestBody UpdateHouseRequest request) {
+    public ApiResponse<HouseResponse> updateHouse(@PathVariable Long houseId, @Valid @RequestBody UpdateHouseRequest request,
+                                                  HttpServletRequest httpRequest) {
+        Long userId = jwtUtil.getUserId(httpRequest);
         return ApiResponse.success(
-                HouseResponse.toDTO(houseService.updateHouse(request, houseId))
+                HouseResponse.toDTO(houseService.updateHouse(request, houseId, userId))
         );
     }
 
 
     // 删除房屋
     @DeleteMapping("/{houseId}")
-    public ApiResponse<String> deleteHouse(@PathVariable Long houseId) {
-        houseService.deleteHouse(houseId);
+    public ApiResponse<String> deleteHouse(@PathVariable Long houseId,HttpServletRequest httpRequest) {
+        Long userId = jwtUtil.getUserId(httpRequest);
+        houseService.deleteHouse(houseId, userId);
         return ApiResponse.success("删除成功");
     }
 }
