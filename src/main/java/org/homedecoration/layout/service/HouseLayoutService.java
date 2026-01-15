@@ -1,24 +1,34 @@
 package org.homedecoration.layout.service;
 
 import jakarta.transaction.Transactional;
+import org.homedecoration.bill.dto.request.CreateBillRequest;
+import org.homedecoration.bill.dto.response.BillResponse;
 import org.homedecoration.bill.entity.Bill;
 import org.homedecoration.bill.repository.BillRepository;
+import org.homedecoration.bill.service.BillService;
 import org.homedecoration.common.exception.BusinessException;
 import org.homedecoration.common.utils.LayoutPermissionUtil;
 import org.homedecoration.house.entity.House;
 import org.homedecoration.house.repository.HouseRepository;
 import org.homedecoration.house.service.HouseService;
+import org.homedecoration.identity.designer.entity.Designer;
 import org.homedecoration.identity.designer.repository.DesignerRepository;
+import org.homedecoration.identity.designer.service.DesignerService;
 import org.homedecoration.identity.user.entity.User;
+import org.homedecoration.identity.user.repository.UserRepository;
 import org.homedecoration.identity.user.service.UserService;
 import org.homedecoration.layout.dto.request.CreateLayoutRequest;
 import org.homedecoration.layout.dto.request.UpdateLayoutRequest;
+import org.homedecoration.layout.dto.response.CurrentLayoutResponse;
+import org.homedecoration.layout.dto.response.LayoutHistoryItemResponse;
+import org.homedecoration.layout.dto.response.LayoutOverviewResponse;
 import org.homedecoration.layout.entity.HouseLayout;
 import org.homedecoration.layout.repository.HouseLayoutRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -30,20 +40,26 @@ public class HouseLayoutService {
     private final LayoutPermissionUtil layoutPermissionUtil;
     private final DesignerRepository designerRepository;
     private final BillRepository billRepository;
+    private final BillService billService;
+    private final UserRepository userRepository;
+    private final DesignerService designerService;
 
     public HouseLayoutService(HouseLayoutRepository houseLayoutRepository, HouseRepository houseRepository,
                               HouseService houseService, UserService userService,
                               LayoutPermissionUtil layoutPermissionUtil, DesignerRepository designerRepository,
-                              BillRepository billRepository) {
+                              BillRepository billRepository, BillService billService, UserRepository userRepository, DesignerService designerService) {
         this.houseLayoutRepository = houseLayoutRepository;
         this.houseService = houseService;
         this.userService = userService;
         this.layoutPermissionUtil = layoutPermissionUtil;
         this.designerRepository = designerRepository;
         this.billRepository = billRepository;
+        this.billService = billService;
+        this.userRepository = userRepository;
+        this.designerService = designerService;
     }
 
-    public HouseLayout createDraft(CreateLayoutRequest request) {
+    public CurrentLayoutResponse createDraft(CreateLayoutRequest request, Long userId) {
         House house = houseService.getHouseById(request.getHouseId());
         HouseLayout layout = new HouseLayout();
         layout.setHouse(house);
@@ -53,7 +69,20 @@ public class HouseLayoutService {
         layout.setLayoutStatus(HouseLayout.LayoutStatus.DRAFT);
         layout.setLayoutVersion(0);
 
-        return houseLayoutRepository.save(layout);
+        HouseLayout savedLayout = houseLayoutRepository.save(layout);
+
+        CreateBillRequest billRequest = new CreateBillRequest();
+        billRequest.setBizType(Bill.BizType.LAYOUT);
+        billRequest.setBizId(savedLayout.getId());
+        billRequest.setAmount(new BigDecimal("5000"));
+        billRequest.setDepositAmount(new BigDecimal("1000"));
+        billRequest.setRemark("户型重设计服务定金");
+
+        Bill bill = billService.createBill(billRequest, userId);
+
+        User designer = designerService.getByDesignerId(request.getDesignerId()).getUser();
+
+        return CurrentLayoutResponse.toDTO(savedLayout,bill,designer);
     }
 
 
@@ -216,4 +245,39 @@ public class HouseLayoutService {
         BigDecimal depositRate = new BigDecimal("0.3");
         return total.multiply(depositRate).setScale(2, BigDecimal.ROUND_HALF_UP);
     }
+
+    @Transactional()
+    public LayoutOverviewResponse getLayoutOverview(Long houseId, Long userId) {
+
+        LayoutOverviewResponse resp = new LayoutOverviewResponse();
+
+        // 1️⃣ 当前 layout（version = 0）
+        HouseLayout current = (HouseLayout) houseLayoutRepository
+                .findByHouseIdAndLayoutVersion(houseId, 0)
+                .orElse(null);
+
+        if (current != null) {
+            Bill bill = billRepository
+                    .findByBizTypeAndBizId(Bill.BizType.LAYOUT, current.getId())
+                    .orElse(null);
+
+            userRepository
+                    .findById(current.getDesignerId()).ifPresent(designer -> resp.setCurrentLayout(
+                            CurrentLayoutResponse.toDTO(current, bill, designer)
+                    ));
+
+        }
+
+        // 2️⃣ 历史 layouts（version > 0）
+        List<LayoutHistoryItemResponse> history = houseLayoutRepository
+                .findByHouseIdAndLayoutVersionGreaterThan(houseId, 0)
+                .stream()
+                .map(layout -> LayoutHistoryItemResponse.toDTO((HouseLayout) layout))
+                .toList();
+
+        resp.setHistoryLayouts(history);
+
+        return resp;
+    }
+
 }

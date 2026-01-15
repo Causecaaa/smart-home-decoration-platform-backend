@@ -7,11 +7,10 @@ import org.homedecoration.common.utils.JwtUtil;
 import org.homedecoration.identity.designer.dto.request.CreateDesignerRequest;
 import org.homedecoration.identity.designer.dto.request.UpdateDesignerProfileRequest;
 import org.homedecoration.identity.designer.dto.response.DesignerDetailResponse;
+import org.homedecoration.identity.designer.dto.response.DesignerLayoutResponse;
 import org.homedecoration.identity.designer.dto.response.DesignerSimpleResponse;
 import org.homedecoration.identity.designer.service.DesignerService;
-import org.homedecoration.layout.dto.response.HouseLayoutResponse;
 import org.homedecoration.layout.entity.HouseLayout;
-import org.homedecoration.layout.service.HouseLayoutService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -55,7 +54,7 @@ public class DesignerController {
 
         return ApiResponse.success(
                 DesignerDetailResponse.toDTO(
-                        designerService.getByUserId(userId)
+                        designerService.getByDesignerId(userId)
                 )
         );
     }
@@ -76,14 +75,26 @@ public class DesignerController {
     }
 
 
-    @GetMapping("/{userId}/get")
-    public ApiResponse<DesignerDetailResponse> getByUserId(@PathVariable Long userId) {
+    @GetMapping("/{designerId}/get")
+    public ApiResponse<DesignerDetailResponse> getByUserId(@PathVariable Long designerId) {
         return ApiResponse.success(
                 DesignerDetailResponse.toDTO(
-                        designerService.getByUserId(userId)
+                        designerService.getByDesignerId(designerId)
                 )
         );
     }
+
+    @GetMapping("/{designerId}/layout")
+    public ApiResponse<DesignerLayoutResponse> getForLayout(
+            @PathVariable Long designerId) {
+
+        return ApiResponse.success(
+                DesignerLayoutResponse.toDTO(
+                        designerService.getByDesignerId(designerId)
+                )
+        );
+    }
+
 
     @GetMapping("/list")
     public ApiResponse<List<DesignerSimpleResponse>> listDesigners(

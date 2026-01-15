@@ -75,7 +75,7 @@ public class DesignerService {
     /**
      * 根据 userId 查询设计师
      */
-    public Designer getByUserId(Long userId) {
+    public Designer getByDesignerId(Long userId) {
         return designerRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("设计师不存在"));
     }
@@ -83,7 +83,7 @@ public class DesignerService {
     @Transactional
     public Designer updateProfile(Long userId, @Valid UpdateDesignerProfileRequest body) {
 
-        Designer designer = getByUserId(userId);
+        Designer designer = getByDesignerId(userId);
 
         // ===== 只更新允许修改的字段 =====
         if (body.getRealName() != null) {

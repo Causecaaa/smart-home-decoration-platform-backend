@@ -4,6 +4,7 @@ import org.homedecoration.layout.entity.HouseLayout;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,4 +28,12 @@ public interface HouseLayoutRepository extends JpaRepository<HouseLayout, Long> 
     List<HouseLayout> findByFurnitureDesignerIdAndLayoutStatus(Long designerId, HouseLayout.LayoutStatus layoutStatus);
 
     List<HouseLayout> findAllByHouseId(Long houseId);
+
+    boolean existsByHouseIdAndLayoutStatus(Long houseId, HouseLayout.LayoutStatus layoutStatus);
+
+    Long getHouseLayoutById(Long id);
+
+    Optional<Object> findByHouseIdAndLayoutVersion(Long houseId, int i);
+
+    Collection<Object> findByHouseIdAndLayoutVersionGreaterThan(Long houseId, int i);
 }

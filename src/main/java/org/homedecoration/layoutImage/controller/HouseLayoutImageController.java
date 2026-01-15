@@ -31,10 +31,9 @@ public class HouseLayoutImageController {
     @PostMapping("/{layoutId}/create")
     public ApiResponse<HouseLayoutImageResponse> createImage(
             @PathVariable Long layoutId,
-            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "file") MultipartFile file,
             @Valid @RequestParam(value = "imageType", required = false) HouseLayoutImage.ImageType imageType,
             @RequestParam(value = "imageDesc", required = false) String imageDesc,
-            @RequestParam(value = "imageUrl", required = false) String imageUrl,
             HttpServletRequest httpRequest) throws IOException {
 
         Long userId = jwtUtil.getUserId(httpRequest);
@@ -43,7 +42,6 @@ public class HouseLayoutImageController {
         request.setFile(file);                // MultipartFile
         request.setImageType(imageType);      // 可选
         request.setImageDesc(imageDesc);      // 可选
-        request.setImageUrl(imageUrl);        // 可选，前端直接提供的 URL
 
         HouseLayoutImage image = houseLayoutImageService.createImage(layoutId, request, userId);
 

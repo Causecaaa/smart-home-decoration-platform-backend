@@ -46,7 +46,7 @@ public class BillService {
     }
 
     @Transactional
-    public BillResponse createBill(CreateBillRequest request, Long payerId) {
+    public Bill createBill(CreateBillRequest request, Long payerId) {
 
         // 1️⃣ 防止重复账单
         boolean exists = billRepository.existsByBizTypeAndBizId(
@@ -82,7 +82,7 @@ public class BillService {
         bill.setRemark(request.getRemark());
 
         Bill saved = billRepository.save(bill);
-        return BillResponse.toDTO(saved);
+        return saved;
     }
 
 

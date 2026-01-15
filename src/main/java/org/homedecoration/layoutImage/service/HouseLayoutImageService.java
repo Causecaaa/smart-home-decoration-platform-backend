@@ -1,6 +1,8 @@
 package org.homedecoration.layoutImage.service;
 
 import org.homedecoration.common.utils.LayoutPermissionUtil;
+import org.homedecoration.house.entity.House;
+import org.homedecoration.house.repository.HouseRepository;
 import org.homedecoration.identity.user.entity.User;
 import org.homedecoration.identity.user.service.UserService;
 import org.homedecoration.layout.entity.HouseLayout;
@@ -28,17 +30,20 @@ public class HouseLayoutImageService {
     private final UserService userService;
     private final LayoutPermissionUtil layoutPermissionUtil;
     private final HouseLayoutImageRepository houseLayoutImageRepository;
+    private final HouseRepository houseRepository;
 
     public HouseLayoutImageService(HouseLayoutRepository layoutRepository,
                                    UserService userService,
                                    LayoutPermissionUtil layoutPermissionUtil,
                                    HouseLayoutImageRepository houseLayoutImageRepository,
-                                   HouseLayoutService houseLayoutService) {
+                                   HouseLayoutService houseLayoutService,
+                                   HouseRepository houseRepository) {
         this.layoutRepository = layoutRepository;
         this.userService = userService;
         this.layoutPermissionUtil = layoutPermissionUtil;
         this.houseLayoutImageRepository = houseLayoutImageRepository;
         this.houseLayoutService = houseLayoutService;
+        this.houseRepository = houseRepository;
     }
 
 
@@ -53,7 +58,6 @@ public class HouseLayoutImageService {
 
     @Transactional
     public HouseLayoutImage createImage(Long layoutId, CreateLayoutImageRequest request, Long userId) {
-
         HouseLayout layout = houseLayoutService.getLayoutById(layoutId);
         User operator = userService.getById(userId);
 
@@ -94,8 +98,8 @@ public class HouseLayoutImageService {
         image.setLayout(layout);
         image.setImageDesc(request.getImageDesc());
         image.setImageType(type);
-        // 如果上传了文件，就保存本地路径，否则使用前端传的 imageUrl
-        image.setImageUrl(filename != null ? "/uploads/layout/" + filename : request.getImageUrl());
+
+        image.setImageUrl("/uploads/layout/" + filename);
 
         return houseLayoutImageRepository.save(image);
     }

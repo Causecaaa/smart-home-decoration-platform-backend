@@ -7,7 +7,9 @@ import org.homedecoration.common.response.ApiResponse;
 import org.homedecoration.common.utils.JwtUtil;
 import org.homedecoration.layout.dto.request.CreateLayoutRequest;
 import org.homedecoration.layout.dto.request.UpdateLayoutRequest;
+import org.homedecoration.layout.dto.response.CurrentLayoutResponse;
 import org.homedecoration.layout.dto.response.HouseLayoutResponse;
+import org.homedecoration.layout.dto.response.LayoutOverviewResponse;
 import org.homedecoration.layout.entity.HouseLayout;
 import org.homedecoration.layout.service.HouseLayoutService;
 import org.springframework.web.bind.annotation.*;
@@ -28,22 +30,38 @@ public class HouseLayoutController {
 
     // 用户REDESIGN 创建提要求
     @PostMapping("/create-draft")
-    public ApiResponse<HouseLayoutResponse> createDraft(
+    public ApiResponse<CurrentLayoutResponse> createDraft(
             @RequestBody CreateLayoutRequest request,
             HttpServletRequest httpRequest) {
-        request.setUserId(jwtUtil.getUserId(httpRequest));
+
+        Long userId = jwtUtil.getUserId(httpRequest);
+
         return ApiResponse.success(
-                HouseLayoutResponse.toDTO(houseLayoutService.createDraft(request))
+                houseLayoutService.createDraft(request, userId)
         );
     }
+
+    @GetMapping("/overview/{houseId}")
+    public ApiResponse<LayoutOverviewResponse> getLayoutOverview(
+            @PathVariable Long houseId,
+            HttpServletRequest request
+    ) {
+        Long userId = jwtUtil.getUserId(request);
+        return ApiResponse.success(
+                houseLayoutService.getLayoutOverview(houseId, userId)
+        );
+    }
+
+
     // 用户KEEP_ORIGINAL 创建confirmed 或者 设计师计划
     @PostMapping("/create-layout")
     public ApiResponse<HouseLayoutResponse> createLayout(
             @RequestBody @Valid CreateLayoutRequest request,
             HttpServletRequest httpRequest) {
         System.out.println("**************************************************");
-        System.out.println(httpRequest);
         request.setUserId(jwtUtil.getUserId(httpRequest));
+
+        System.out.println(request.getUserId());
         return ApiResponse.success(
                 HouseLayoutResponse.toDTO(
                         houseLayoutService.createLayout(request)

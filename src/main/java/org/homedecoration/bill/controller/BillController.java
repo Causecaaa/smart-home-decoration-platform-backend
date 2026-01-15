@@ -32,7 +32,7 @@ public class BillController {
             @Valid @RequestBody CreateBillRequest request
     ) {
         Long payerId = jwtUtil.getUserId(httpRequest); // 支付方从 token 获取
-        BillResponse response = billService.createBill(request, payerId);
+        BillResponse response = BillResponse.toDTO(billService.createBill(request, payerId));
         return ApiResponse.success(response);
     }
 
