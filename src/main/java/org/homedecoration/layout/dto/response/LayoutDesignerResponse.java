@@ -4,7 +4,7 @@ import lombok.Data;
 import org.homedecoration.layout.entity.HouseLayout;
 
 @Data
-public class LayoutHistoryItemResponse {
+public class LayoutDesignerResponse {
 
     private Long layoutId;
     private Integer version;
@@ -12,8 +12,8 @@ public class LayoutHistoryItemResponse {
     private String redesignNotes;
     private HouseLayout.LayoutStatus layoutStatus;
 
-    public static LayoutHistoryItemResponse toDTO(HouseLayout layout) {
-        LayoutHistoryItemResponse dto = new LayoutHistoryItemResponse();
+    public static LayoutDesignerResponse toDTO(HouseLayout layout) {
+        LayoutDesignerResponse dto = new LayoutDesignerResponse();
         dto.setLayoutId(layout.getId());
         dto.setVersion(layout.getLayoutVersion());
         dto.setLayoutIntent(layout.getLayoutIntent());

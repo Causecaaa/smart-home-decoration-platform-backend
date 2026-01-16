@@ -2,7 +2,6 @@ package org.homedecoration.layout.service;
 
 import jakarta.transaction.Transactional;
 import org.homedecoration.bill.dto.request.CreateBillRequest;
-import org.homedecoration.bill.dto.response.BillResponse;
 import org.homedecoration.bill.entity.Bill;
 import org.homedecoration.bill.repository.BillRepository;
 import org.homedecoration.bill.service.BillService;
@@ -19,8 +18,8 @@ import org.homedecoration.identity.user.repository.UserRepository;
 import org.homedecoration.identity.user.service.UserService;
 import org.homedecoration.layout.dto.request.CreateLayoutRequest;
 import org.homedecoration.layout.dto.request.UpdateLayoutRequest;
-import org.homedecoration.layout.dto.response.CurrentLayoutResponse;
-import org.homedecoration.layout.dto.response.LayoutHistoryItemResponse;
+import org.homedecoration.layout.dto.response.DraftLayoutResponse;
+import org.homedecoration.layout.dto.response.LayoutDesignerResponse;
 import org.homedecoration.layout.dto.response.LayoutOverviewResponse;
 import org.homedecoration.layout.entity.HouseLayout;
 import org.homedecoration.layout.repository.HouseLayoutRepository;
@@ -28,7 +27,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -59,7 +57,7 @@ public class HouseLayoutService {
         this.designerService = designerService;
     }
 
-    public CurrentLayoutResponse createDraft(CreateLayoutRequest request, Long userId) {
+    public DraftLayoutResponse createDraft(CreateLayoutRequest request, Long userId) {
         House house = houseService.getHouseById(request.getHouseId());
         HouseLayout layout = new HouseLayout();
         layout.setHouse(house);
@@ -80,9 +78,9 @@ public class HouseLayoutService {
 
         Bill bill = billService.createBill(billRequest, userId);
 
-        User designer = designerService.getByDesignerId(request.getDesignerId()).getUser();
+        Designer designer = designerService.getByDesignerId(request.getDesignerId());
 
-        return CurrentLayoutResponse.toDTO(savedLayout,bill,designer);
+        return DraftLayoutResponse.toDTO(savedLayout,bill,designer);
     }
 
 
@@ -261,21 +259,29 @@ public class HouseLayoutService {
                     .findByBizTypeAndBizId(Bill.BizType.LAYOUT, current.getId())
                     .orElse(null);
 
-            userRepository
-                    .findById(current.getDesignerId()).ifPresent(designer -> resp.setCurrentLayout(
-                            CurrentLayoutResponse.toDTO(current, bill, designer)
+            designerRepository
+                    .findById(current.getDesignerId()).ifPresent(designer -> resp.setDraftLayout(
+                            DraftLayoutResponse.toDTO(current, bill, designer)
                     ));
 
         }
 
         // 2️⃣ 历史 layouts（version > 0）
-        List<LayoutHistoryItemResponse> history = houseLayoutRepository
-                .findByHouseIdAndLayoutVersionGreaterThan(houseId, 0)
+        List<LayoutDesignerResponse> designerLayouts = houseLayoutRepository
+                .findByHouseIdAndLayoutVersionGreaterThanAndLayoutVersionLessThan(houseId, 0, 10)
                 .stream()
-                .map(layout -> LayoutHistoryItemResponse.toDTO((HouseLayout) layout))
+                .map(layout -> LayoutDesignerResponse.toDTO((HouseLayout) layout))
                 .toList();
 
-        resp.setHistoryLayouts(history);
+        resp.setDesignerLayouts(designerLayouts);
+
+        HouseLayout keep = (HouseLayout) houseLayoutRepository
+                .findByHouseIdAndLayoutVersion(houseId, 10)
+                .orElse(null);
+
+        if(keep != null){
+            resp.setKeepOriginalLayout(LayoutDesignerResponse.toDTO(keep));
+        }
 
         return resp;
     }

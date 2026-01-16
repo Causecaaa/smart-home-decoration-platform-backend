@@ -1,15 +1,14 @@
 package org.homedecoration.layout.dto.response;
 
 import lombok.Data;
-import org.homedecoration.bill.dto.response.BillResponse;
 import org.homedecoration.bill.entity.Bill;
-import org.homedecoration.identity.user.entity.User;
+import org.homedecoration.identity.designer.entity.Designer;
 import org.homedecoration.layout.entity.HouseLayout;
 
 import java.math.BigDecimal;
 
 @Data
-public class CurrentLayoutResponse {
+public class DraftLayoutResponse {
 
     // ===== Layout =====
     private Long layoutId;
@@ -29,11 +28,11 @@ public class CurrentLayoutResponse {
     private BigDecimal depositAmount;
     private Bill.PayStatus payStatus;
 
-    public static CurrentLayoutResponse toDTO(HouseLayout layout,
-                                              Bill bill,
-                                              User designer) {
+    public static DraftLayoutResponse toDTO(HouseLayout layout,
+                                            Bill bill,
+                                            Designer designer) {
 
-        CurrentLayoutResponse resp = new CurrentLayoutResponse();
+        DraftLayoutResponse resp = new DraftLayoutResponse();
 
         // layout
         resp.setLayoutId(layout.getId());
@@ -43,9 +42,9 @@ public class CurrentLayoutResponse {
         resp.setLayoutStatus(layout.getLayoutStatus());
 
         // designer
-        resp.setDesignerId(designer.getId());
-        resp.setDesignerUsername(designer.getUsername());
-        resp.setDesignerEmail(designer.getEmail());
+        resp.setDesignerId(designer.getUser().getId());
+        resp.setDesignerUsername(designer.getRealName());
+        resp.setDesignerEmail(designer.getUser().getEmail());
 
         // bill（⚠ 可能为空）
         if (bill != null) {

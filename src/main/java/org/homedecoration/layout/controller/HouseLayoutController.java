@@ -7,7 +7,7 @@ import org.homedecoration.common.response.ApiResponse;
 import org.homedecoration.common.utils.JwtUtil;
 import org.homedecoration.layout.dto.request.CreateLayoutRequest;
 import org.homedecoration.layout.dto.request.UpdateLayoutRequest;
-import org.homedecoration.layout.dto.response.CurrentLayoutResponse;
+import org.homedecoration.layout.dto.response.DraftLayoutResponse;
 import org.homedecoration.layout.dto.response.HouseLayoutResponse;
 import org.homedecoration.layout.dto.response.LayoutOverviewResponse;
 import org.homedecoration.layout.entity.HouseLayout;
@@ -30,7 +30,7 @@ public class HouseLayoutController {
 
     // 用户REDESIGN 创建提要求
     @PostMapping("/create-draft")
-    public ApiResponse<CurrentLayoutResponse> createDraft(
+    public ApiResponse<DraftLayoutResponse> createDraft(
             @RequestBody CreateLayoutRequest request,
             HttpServletRequest httpRequest) {
 
