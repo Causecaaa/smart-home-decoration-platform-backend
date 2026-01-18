@@ -17,6 +17,8 @@ public class DraftLayoutResponse {
     private String redesignNotes;
     private HouseLayout.LayoutStatus layoutStatus;
 
+    private Long confirmedLayoutId;
+
     // ===== Designer =====
     private Long designerId;
     private String designerUsername;
@@ -29,6 +31,7 @@ public class DraftLayoutResponse {
     private Bill.PayStatus payStatus;
 
     public static DraftLayoutResponse toDTO(HouseLayout layout,
+                                            Long confirmedLayoutId,
                                             Bill bill,
                                             Designer designer) {
 
@@ -40,6 +43,8 @@ public class DraftLayoutResponse {
         resp.setLayoutIntent(layout.getLayoutIntent());
         resp.setRedesignNotes(layout.getRedesignNotes());
         resp.setLayoutStatus(layout.getLayoutStatus());
+
+        resp.setConfirmedLayoutId(confirmedLayoutId);
 
         // designer
         resp.setDesignerId(designer.getUser().getId());

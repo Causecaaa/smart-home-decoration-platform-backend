@@ -60,6 +60,7 @@ area DECIMAL(6,2) NOT NULL COMMENT '建筑面积（㎡）',
 layout_type VARCHAR(50) COMMENT '户型描述（如 2室1厅1卫）',
 floor_count INT COMMENT '总层数',
 decoration_type VARCHAR(20) COMMENT '装修类型（full / half / loose）',
+confirmed_layout_id BIGINT COMMENT '对应的以确定的layout',
 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 CONSTRAINT fk_house_user FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
@@ -79,9 +80,20 @@ layout_version VARCHAR(20) COMMENT '布局版本号（v1 / v2）',
 layout_status VARCHAR(20) COMMENT '房屋空间布局状态：DRAFT / SUBMITTED / CONFIRMED / ARCHIVED',
 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
 CONSTRAINT fk_layout_house FOREIGN KEY (house_id) REFERENCES house(house_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='房屋布局信息表';
+
+-- 布局或设计图片
+CREATE TABLE house_layout_image (
+id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '图片主键',
+layout_id BIGINT NOT NULL COMMENT '所属布局方案',
+image_url VARCHAR(255) COMMENT '户型图/布局图地址',
+image_type VARCHAR(20) COMMENT '图片类型（ORIGINAL / STRUCTURE / FURNITURE）',
+image_desc VARCHAR(255) COMMENT '图片说明',
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+CONSTRAINT fk_image_layout FOREIGN KEY (layout_id) REFERENCES house_layout(layout_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='布局/设计图片表';
 
 
 -- 房间信息表（HouseRoom）
@@ -126,18 +138,6 @@ REFERENCES furniture_scheme(scheme_id)
 ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='家具设计图片表';
 
-
--- 布局或设计图片
-CREATE TABLE house_layout_image (
-id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '图片主键',
-layout_id BIGINT NOT NULL COMMENT '所属布局方案',
-image_url VARCHAR(255) COMMENT '户型图/布局图地址',
-image_type VARCHAR(20) COMMENT '图片类型（ORIGINAL / STRUCTURE / FURNITURE）',
-image_desc VARCHAR(255) COMMENT '图片说明',
-created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-CONSTRAINT fk_image_layout FOREIGN KEY (layout_id) REFERENCES house_layout(layout_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='布局/设计图片表';
 
 -- 通用账单表（支持定金 + 尾款）
 CREATE TABLE `bill` (

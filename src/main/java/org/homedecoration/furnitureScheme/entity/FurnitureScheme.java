@@ -48,11 +48,8 @@ public class FurnitureScheme {
     @Column(name = "scheme_version", length = 20)
     private Integer schemeVersion; // v1 / v2 / v3
 
-    /**
-     * 家具设计图片（一房多图）
-     */
-    @OneToMany(mappedBy = "scheme", fetch = FetchType.LAZY)
-    private List<FurnitureImage> images;
+    @Column(name = "image_url", nullable = false, length = 255)
+    private String imageUrl;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

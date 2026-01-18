@@ -1,6 +1,7 @@
 package org.homedecoration.houseRoom.dto.response;
 
 import lombok.Data;
+import org.homedecoration.furnitureScheme.entity.FurnitureScheme;
 import org.homedecoration.houseRoom.entity.HouseRoom;
 
 import java.math.BigDecimal;
@@ -29,9 +30,14 @@ public class RoomResponse {
     private String notes;
 
     /**
-     * 是否已经存在家具设计方案
+     * 是否存在家具设计方案（任何状态）
      */
     private Boolean hasFurnitureScheme;
+
+    /**
+     * 是否已确认家具设计方案
+     */
+    private Boolean hasConfirmedScheme;
 
     public static RoomResponse toDTO(HouseRoom room) {
         RoomResponse dto = new RoomResponse();
@@ -47,10 +53,18 @@ public class RoomResponse {
         dto.setHasBalcony(room.getHasBalcony());
         dto.setNotes(room.getNotes());
 
-        // 只关心“有没有家具设计”，不暴露 scheme 细节
-        dto.setHasFurnitureScheme(
-                room.getSchemes() != null && !room.getSchemes().isEmpty()
-        );
+        dto.setHasFurnitureScheme(room.getSchemes() != null && !room.getSchemes().isEmpty()); // 有任何方案
+
+        if (room.getSchemes() != null && !room.getSchemes().isEmpty()) {
+            boolean hasConfirmedScheme = room.getSchemes().stream()
+                    .anyMatch(scheme ->
+                            scheme.getSchemeStatus() == FurnitureScheme.SchemeStatus.CONFIRMED
+                    );
+            dto.setHasConfirmedScheme(hasConfirmedScheme); // 有已确认方案
+        } else {
+            dto.setHasConfirmedScheme(false);
+        }
+
 
         return dto;
     }

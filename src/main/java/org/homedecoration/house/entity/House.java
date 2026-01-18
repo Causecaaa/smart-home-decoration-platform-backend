@@ -66,6 +66,9 @@ public class House {
     @Column(name = "decoration_type", nullable = false, length = 20)
     private DecorationType decorationType;
 
+    @Column(name = "confirmed_layout_id")
+    private Long confirmedLayoutId;
+
     @CreationTimestamp
     @Column(name = "created_at")
     private Instant createdAt;

@@ -8,6 +8,7 @@ import org.homedecoration.common.utils.JwtUtil;
 import org.homedecoration.layout.dto.request.CreateLayoutRequest;
 import org.homedecoration.layout.dto.request.UpdateLayoutRequest;
 import org.homedecoration.layout.dto.response.DraftLayoutResponse;
+import org.homedecoration.layout.dto.response.FurnitureLayoutResponse;
 import org.homedecoration.layout.dto.response.HouseLayoutResponse;
 import org.homedecoration.layout.dto.response.LayoutOverviewResponse;
 import org.homedecoration.layout.entity.HouseLayout;
@@ -80,13 +81,12 @@ public class HouseLayoutController {
         );
     }
 
-    @GetMapping("/get/{layoutId}")
-    public ApiResponse<HouseLayoutResponse> getLayoutDetail(
+    @GetMapping("/furniture/{layoutId}")
+    public ApiResponse<FurnitureLayoutResponse> getLayoutDetail(
             @PathVariable Long layoutId) {
 
-        HouseLayout layout = houseLayoutService.getLayoutById(layoutId);
         return ApiResponse.success(
-                HouseLayoutResponse.toDTO(layout)
+                houseLayoutService.getFurnitureLayoutById(layoutId)
         );
     }
 
@@ -96,8 +96,7 @@ public class HouseLayoutController {
             @RequestBody @Valid UpdateLayoutRequest request,
             HttpServletRequest httpRequest) {
 
-        String token = httpRequest.getHeader("Authorization").replace("Bearer ", "");
-        Long userId = jwtUtil.getUserId(token);
+        Long userId = jwtUtil.getUserId(httpRequest);
 
         return ApiResponse.success(
                 HouseLayoutResponse.toDTO(
@@ -111,8 +110,7 @@ public class HouseLayoutController {
             @PathVariable Long layoutId,
             HttpServletRequest httpRequest) {
 
-        String token = httpRequest.getHeader("Authorization").replace("Bearer ", "");
-        Long userId = jwtUtil.getUserId(token);
+        Long userId = jwtUtil.getUserId(httpRequest);
 
         houseLayoutService.deleteLayout(layoutId, userId);
 
@@ -124,8 +122,7 @@ public class HouseLayoutController {
             @PathVariable Long layoutId,
             HttpServletRequest httpRequest) {
 
-        String token = httpRequest.getHeader("Authorization").replace("Bearer ", "");
-        Long userId = jwtUtil.getUserId(token);
+        Long userId = jwtUtil.getUserId(httpRequest);
 
         HouseLayout confirmedLayout = houseLayoutService.confirmLayout(layoutId, userId);
         return ApiResponse.success(HouseLayoutResponse.toDTO(confirmedLayout));

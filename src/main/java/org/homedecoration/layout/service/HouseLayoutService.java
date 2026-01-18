@@ -19,6 +19,7 @@ import org.homedecoration.identity.user.service.UserService;
 import org.homedecoration.layout.dto.request.CreateLayoutRequest;
 import org.homedecoration.layout.dto.request.UpdateLayoutRequest;
 import org.homedecoration.layout.dto.response.DraftLayoutResponse;
+import org.homedecoration.layout.dto.response.FurnitureLayoutResponse;
 import org.homedecoration.layout.dto.response.LayoutDesignerResponse;
 import org.homedecoration.layout.dto.response.LayoutOverviewResponse;
 import org.homedecoration.layout.entity.HouseLayout;
@@ -41,6 +42,7 @@ public class HouseLayoutService {
     private final BillService billService;
     private final UserRepository userRepository;
     private final DesignerService designerService;
+    private final HouseRepository houseRepository;
 
     public HouseLayoutService(HouseLayoutRepository houseLayoutRepository, HouseRepository houseRepository,
                               HouseService houseService, UserService userService,
@@ -48,6 +50,7 @@ public class HouseLayoutService {
                               BillRepository billRepository, BillService billService, UserRepository userRepository, DesignerService designerService) {
         this.houseLayoutRepository = houseLayoutRepository;
         this.houseService = houseService;
+        this.houseRepository = houseRepository;
         this.userService = userService;
         this.layoutPermissionUtil = layoutPermissionUtil;
         this.designerRepository = designerRepository;
@@ -80,7 +83,7 @@ public class HouseLayoutService {
 
         Designer designer = designerService.getByDesignerId(request.getDesignerId());
 
-        return DraftLayoutResponse.toDTO(savedLayout,bill,designer);
+        return DraftLayoutResponse.toDTO(savedLayout,null,bill,designer);
     }
 
 
@@ -93,7 +96,7 @@ public class HouseLayoutService {
         layout.setLayoutIntent(request.getLayoutIntent());
 
         if (user.getRole() == User.Role.USER) {
-            layout.setLayoutVersion(1);
+            layout.setLayoutVersion(10);
             layout.setLayoutStatus(HouseLayout.LayoutStatus.SUBMITTED);
         }
 
@@ -120,6 +123,20 @@ public class HouseLayoutService {
     public HouseLayout getLayoutById(Long layoutId) {
         return houseLayoutRepository.findById(layoutId)
                 .orElseThrow(() -> new RuntimeException("Layout not found with id: " + layoutId));
+    }
+
+    @Transactional
+    public FurnitureLayoutResponse getFurnitureLayoutById(Long layoutId) {
+        HouseLayout layout = getLayoutById(layoutId);
+
+        Designer designer = null;
+        if(layout.getFurnitureDesignerId() != null){
+            designer = designerRepository.findById(layout.getFurnitureDesignerId()).orElse(null);
+        }
+        
+        Bill bill = billRepository.findByBizTypeAndBizId(Bill.BizType.FURNITURE, layoutId).orElse( null);
+
+        return FurnitureLayoutResponse.toDTO(layout, designer, bill);
     }
 
     @Transactional
@@ -175,55 +192,70 @@ public class HouseLayoutService {
 
         // 确认当前 layout
         layout.setLayoutStatus(HouseLayout.LayoutStatus.CONFIRMED);
+
+        House house = layout.getHouse();
+        house.setConfirmedLayoutId(layoutId);
+        houseRepository.save(house);
+
         return houseLayoutRepository.save(layout);
     }
 
     @Transactional
     public HouseLayout confirmFurnitureDesigner(Long layoutId, Long furnitureDesignerId, Long userId) {
-        HouseLayout layout = houseLayoutRepository.findById(layoutId)
-                .orElseThrow(() -> new BusinessException("Layout不存在"));
+    HouseLayout layout = houseLayoutRepository.findById(layoutId)
+            .orElseThrow(() -> new BusinessException("Layout不存在"));
 
-        // 可以加权限校验：只有房主可以选择家具设计师
-        if (!layout.getHouse().getUser().getId().equals(userId)) {
-            throw new BusinessException("无权操作该布局");
-        }
-
-        // 只能在 CONFIRMED 状态后选择家具设计师
-        if (layout.getLayoutStatus() != HouseLayout.LayoutStatus.CONFIRMED) {
-            throw new BusinessException("请先确认布局方案");
-        }
-
-        if (!designerRepository.existsById(furnitureDesignerId)) {
-            throw new BusinessException("选择的家具设计师不存在");
-        }
-
-        layout.setFurnitureDesignerId(furnitureDesignerId);
-        HouseLayout savedLayout = houseLayoutRepository.save(layout);
-
-        boolean billExists = billRepository.existsByBizTypeAndBizId(
-                Bill.BizType.FURNITURE,
-                layoutId
-        );
-        if (!billExists) {
-            // 计算金额（你可以封装成单独方法）
-            BigDecimal totalAmount = calculateFurnitureTotal(layout);
-            BigDecimal depositAmount = calculateFurnitureDeposit(layout);
-
-            Bill furnitureBill = new Bill();
-            furnitureBill.setBizType(Bill.BizType.FURNITURE);
-            furnitureBill.setBizId(layoutId);
-            furnitureBill.setAmount(totalAmount);
-            furnitureBill.setDepositAmount(depositAmount);
-            furnitureBill.setPayStatus(Bill.PayStatus.UNPAID);
-            furnitureBill.setPayerId(layout.getHouse().getUser().getId());
-            furnitureBill.setPayeeId(furnitureDesignerId);
-            furnitureBill.setRemark("家具阶段账单");
-
-            billRepository.save(furnitureBill);
-        }
-
-        return savedLayout;
+    // 权限校验
+    if (!layout.getHouse().getUser().getId().equals(userId)) {
+        throw new BusinessException("无权操作该布局");
     }
+
+    if (layout.getLayoutStatus() != HouseLayout.LayoutStatus.CONFIRMED) {
+        throw new BusinessException("请先确认布局方案");
+    }
+
+    if (!designerRepository.existsById(furnitureDesignerId)) {
+        throw new BusinessException("选择的家具设计师不存在");
+    }
+
+    layout.setFurnitureDesignerId(furnitureDesignerId);
+    HouseLayout savedLayout = houseLayoutRepository.save(layout);
+
+    // 查找现有的家具账单
+    Optional<Bill> existingBillOpt = billRepository.findByBizTypeAndBizId(
+            Bill.BizType.FURNITURE,
+            layoutId
+    );
+
+    if (existingBillOpt.isPresent()) {
+        // 如果账单存在且未支付定金，则更新收款人
+        Bill existingBill = existingBillOpt.get();
+        if (existingBill.getPayStatus() == Bill.PayStatus.UNPAID) {
+            existingBill.setPayeeId(furnitureDesignerId);
+            billRepository.save(existingBill);
+        } else {
+            throw new BusinessException("账单已支付，无法更换设计师");
+        }
+    } else {
+        // 如果账单不存在，创建新账单
+        BigDecimal totalAmount = calculateFurnitureTotal(layout);
+        BigDecimal depositAmount = calculateFurnitureDeposit(layout);
+
+        Bill furnitureBill = new Bill();
+        furnitureBill.setBizType(Bill.BizType.FURNITURE);
+        furnitureBill.setBizId(layoutId);
+        furnitureBill.setAmount(totalAmount);
+        furnitureBill.setDepositAmount(depositAmount);
+        furnitureBill.setPayStatus(Bill.PayStatus.UNPAID);
+        furnitureBill.setPayerId(layout.getHouse().getUser().getId());
+        furnitureBill.setPayeeId(furnitureDesignerId);
+        furnitureBill.setRemark("家具阶段账单");
+
+        billRepository.save(furnitureBill);
+    }
+
+    return savedLayout;
+}
 
     public BigDecimal calculateFurnitureTotal(HouseLayout layout) {
         if (layout == null || layout.getHouse() == null) {
@@ -261,7 +293,7 @@ public class HouseLayoutService {
 
             designerRepository
                     .findById(current.getDesignerId()).ifPresent(designer -> resp.setDraftLayout(
-                            DraftLayoutResponse.toDTO(current, bill, designer)
+                            DraftLayoutResponse.toDTO(current, current.getHouse().getConfirmedLayoutId() ,bill, designer)
                     ));
 
         }

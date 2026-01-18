@@ -33,4 +33,5 @@ public interface FurnitureSchemeRepository extends JpaRepository<FurnitureScheme
             @Param("status") FurnitureScheme.SchemeStatus status
     );
 
+    List<FurnitureScheme> findByRoomOrderBySchemeVersionAsc(HouseRoom room);
 }

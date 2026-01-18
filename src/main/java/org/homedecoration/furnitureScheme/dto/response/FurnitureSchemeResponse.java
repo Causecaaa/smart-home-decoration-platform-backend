@@ -12,7 +12,8 @@ public class FurnitureSchemeResponse {
     private Long roomId;
     private Long designerId;
     private String schemeStatus;
-    private Integer schemeVersion; // 改成 Integer
+    private Integer schemeVersion;
+    private String imageUrl;
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -23,6 +24,7 @@ public class FurnitureSchemeResponse {
         dto.setDesignerId(scheme.getDesignerId());
         dto.setSchemeStatus(scheme.getSchemeStatus().name());
         dto.setSchemeVersion(scheme.getSchemeVersion());
+        dto.setImageUrl(scheme.getImageUrl());
         dto.setCreatedAt(scheme.getCreatedAt());
         dto.setUpdatedAt(scheme.getUpdatedAt());
         return dto;

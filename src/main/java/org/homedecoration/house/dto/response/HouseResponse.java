@@ -22,6 +22,8 @@ public class HouseResponse {
     private Instant createdAt;
     private Instant updatedAt;
 
+    private Long confirmedLayoutId;
+
     public static HouseResponse toDTO(House house) {
         HouseResponse response = new HouseResponse();
         response.setUserId(house.getUser().getId());
@@ -35,6 +37,7 @@ public class HouseResponse {
         response.setLayoutType(house.getLayoutType());
         response.setFloorCount(house.getFloorCount());
         response.setDecorationType(house.getDecorationType());
+        response.setConfirmedLayoutId(house.getConfirmedLayoutId());
         response.setCreatedAt(house.getCreatedAt());
         response.setUpdatedAt(house.getUpdatedAt());
         return response;
