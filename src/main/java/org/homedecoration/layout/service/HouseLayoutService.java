@@ -7,9 +7,12 @@ import org.homedecoration.bill.repository.BillRepository;
 import org.homedecoration.bill.service.BillService;
 import org.homedecoration.common.exception.BusinessException;
 import org.homedecoration.common.utils.LayoutPermissionUtil;
+import org.homedecoration.furnitureScheme.entity.FurnitureScheme;
 import org.homedecoration.house.entity.House;
 import org.homedecoration.house.repository.HouseRepository;
 import org.homedecoration.house.service.HouseService;
+import org.homedecoration.houseRoom.entity.HouseRoom;
+import org.homedecoration.houseRoom.repository.HouseRoomRepository;
 import org.homedecoration.identity.designer.entity.Designer;
 import org.homedecoration.identity.designer.repository.DesignerRepository;
 import org.homedecoration.identity.designer.service.DesignerService;
@@ -43,11 +46,13 @@ public class HouseLayoutService {
     private final UserRepository userRepository;
     private final DesignerService designerService;
     private final HouseRepository houseRepository;
+    private final HouseRoomRepository houseRoomRepository;
 
     public HouseLayoutService(HouseLayoutRepository houseLayoutRepository, HouseRepository houseRepository,
                               HouseService houseService, UserService userService,
                               LayoutPermissionUtil layoutPermissionUtil, DesignerRepository designerRepository,
-                              BillRepository billRepository, BillService billService, UserRepository userRepository, DesignerService designerService) {
+                              BillRepository billRepository, BillService billService, UserRepository userRepository,
+                              DesignerService designerService, HouseRoomRepository houseRoomRepository) {
         this.houseLayoutRepository = houseLayoutRepository;
         this.houseService = houseService;
         this.houseRepository = houseRepository;
@@ -58,6 +63,7 @@ public class HouseLayoutService {
         this.billService = billService;
         this.userRepository = userRepository;
         this.designerService = designerService;
+        this.houseRoomRepository = houseRoomRepository;
     }
 
     public DraftLayoutResponse createDraft(CreateLayoutRequest request, Long userId) {
@@ -129,15 +135,48 @@ public class HouseLayoutService {
     public FurnitureLayoutResponse getFurnitureLayoutById(Long layoutId) {
         HouseLayout layout = getLayoutById(layoutId);
 
+        FurnitureScheme.SchemeStatus schemeStatus = determineFurnitureSchemeStatusByRooms(layoutId);
+
         Designer designer = null;
         if(layout.getFurnitureDesignerId() != null){
             designer = designerRepository.findById(layout.getFurnitureDesignerId()).orElse(null);
         }
-        
-        Bill bill = billRepository.findByBizTypeAndBizId(Bill.BizType.FURNITURE, layoutId).orElse( null);
 
-        return FurnitureLayoutResponse.toDTO(layout, designer, bill);
+        Bill bill = billRepository.findByBizTypeAndBizId(Bill.BizType.FURNITURE, layoutId).orElse(null);
+
+        return FurnitureLayoutResponse.toDTO(layout, schemeStatus, designer, bill);
     }
+
+    private FurnitureScheme.SchemeStatus determineFurnitureSchemeStatusByRooms(Long layoutId) {
+        List<HouseRoom> rooms = houseRoomRepository.findByLayoutId(layoutId);
+
+        if (rooms.isEmpty()) {
+            return FurnitureScheme.SchemeStatus.DRAFT;
+        }
+
+        boolean allConfirmed = rooms.stream()
+                .allMatch(this::hasConfirmedSchemes);
+
+        if (allConfirmed) {
+            return FurnitureScheme.SchemeStatus.CONFIRMED;
+        } else {
+            return FurnitureScheme.SchemeStatus.SUBMITTED; // 部分确认或有其他状态
+        }
+    }
+
+    private boolean hasConfirmedSchemes(HouseRoom room) {
+        List<FurnitureScheme> schemes = room.getSchemes();
+
+        if (schemes.isEmpty()) {
+            return false; // 没有方案则不是确认状态
+        }
+
+        // 检查是否有至少一个方案是确认状态
+        return schemes.stream()
+                .anyMatch(scheme -> scheme.getSchemeStatus() == FurnitureScheme.SchemeStatus.CONFIRMED);
+    }
+
+
 
     @Transactional
     public HouseLayout updateLayout(Long layoutId, UpdateLayoutRequest request, Long userId) {

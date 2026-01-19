@@ -20,6 +20,7 @@ import java.util.List;
 public class FurnitureScheme {
 
     public enum SchemeStatus {
+        DRAFT,
         SUBMITTED,
         CONFIRMED,
         ARCHIVED

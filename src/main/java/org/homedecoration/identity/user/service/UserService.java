@@ -1,7 +1,9 @@
 package org.homedecoration.identity.user.service;
 
 import jakarta.transaction.Transactional;
+import org.homedecoration.common.exception.BusinessException;
 import org.homedecoration.common.utils.JwtUtil;
+import org.homedecoration.identity.user.dto.request.ChangePasswordRequest;
 import org.homedecoration.identity.user.dto.request.CreateUserRequest;
 import org.homedecoration.identity.user.dto.request.UpdateProfileRequest;
 import org.homedecoration.identity.user.dto.response.LoginResponse;
@@ -112,15 +114,25 @@ public class UserService {
     public User updateProfile(Long userId, UpdateProfileRequest request) {
         User user = getById(userId);
 
-        user.setUsername(request.getUsername());
+        user.setUsername(request.getUserName());
         user.setPhone(request.getPhone());
-
-        if (request.getPassword() != null && !request.getPassword().isBlank()) {
-            user.setPassword(passwordEncoder.encode(request.getPassword()));
-        }
 
         return userRepository.save(user);
     }
+
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        User user = getById(userId);
+
+        // 验证旧密码
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new BusinessException("原密码错误");
+        }
+
+        // 设置新密码
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+    }
+
 
     public User updateStatus(Long id, User.Status status) {
         User user = getById(id);

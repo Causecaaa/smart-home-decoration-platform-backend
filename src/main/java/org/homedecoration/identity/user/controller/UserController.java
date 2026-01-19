@@ -1,7 +1,10 @@
 package org.homedecoration.identity.user.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.homedecoration.common.response.ApiResponse;
+import org.homedecoration.common.utils.JwtUtil;
+import org.homedecoration.identity.user.dto.request.ChangePasswordRequest;
 import org.homedecoration.identity.user.dto.request.CreateUserRequest;
 import org.homedecoration.identity.user.dto.request.LoginRequest;
 import org.homedecoration.identity.user.dto.request.UpdateProfileRequest;
@@ -20,9 +23,11 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final JwtUtil jwtUtil;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, JwtUtil jwtUtil) {
         this.userService = userService;
+        this.jwtUtil = jwtUtil;
     }
 
     // 新增用户
@@ -62,32 +67,43 @@ public class UserController {
 
 
     // 查询单个用户（按 ID）
-    @GetMapping("/id/{id}")
-    public ApiResponse<UserResponse> getUserById(@PathVariable Long id) {
+    @GetMapping("/userInfo")
+    public ApiResponse<UserResponse> getUserById(HttpServletRequest httpRequest) {
+        Long id = jwtUtil.getUserId(httpRequest);
         return ApiResponse.success(
                 UserResponse.toDTO(userService.getById(id))
         );
     }
 
-    @PostMapping("/{id}/upload-avatar")
+    @PostMapping("/upload-avatar")
     public ApiResponse<UserResponse> uploadAvatar(
-            @PathVariable Long id,
+            HttpServletRequest httpRequest,
             @RequestParam("file") MultipartFile file
     ) throws IOException {
+        Long id = jwtUtil.getUserId(httpRequest);
         return ApiResponse.success(
                 UserResponse.toDTO(userService.uploadAvatar(id, file))
         );
     }
 
 
-
-    @PutMapping("/{id}/update-profile")
+    @PutMapping("/update-profile")
     public ApiResponse<UserResponse> updateProfile(
-            @PathVariable Long id,
+            HttpServletRequest httpRequest,
             @Valid @RequestBody UpdateProfileRequest request) {
+        Long id = jwtUtil.getUserId(httpRequest);
         return ApiResponse.success(
                 UserResponse.toDTO(userService.updateProfile(id, request))
         );
+    }
+
+    @PutMapping("/change-password")
+    public ApiResponse<Void> changePassword(
+            HttpServletRequest httpRequest,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        Long id = jwtUtil.getUserId(httpRequest);
+        userService.changePassword(id, request);
+        return ApiResponse.success(null);
     }
 
 
