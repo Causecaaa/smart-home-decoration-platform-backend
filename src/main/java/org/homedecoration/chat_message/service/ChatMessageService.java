@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.homedecoration.chat_message.dto.request.ChatMessageRequest;
 import org.homedecoration.chat_message.entity.ChatMessage;
 import org.homedecoration.chat_message.repository.ChatMessageRepository;
+import org.homedecoration.identity.user.dto.response.UserResponse;
 import org.homedecoration.identity.user.repository.UserRepository;
 import org.homedecoration.identity.user.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +21,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -97,4 +99,24 @@ public class ChatMessageService {
         // 删除消息
         chatMessageRepository.delete(message);
     }
+
+
+
+
+    // 在 ChatMessageService 中
+    @Transactional
+    public List<UserResponse> getChatPartnersByCurrentUser(Long userId) {
+        List<Object[]> results = chatMessageRepository.findDistinctChatUserIdsByUserId(userId);
+
+        List<Long> partnerIds = results.stream()
+                .map(result -> ((Number) result[0]).longValue())
+                .collect(Collectors.toList());
+
+        // 根据用户ID获取用户详细信息
+        return partnerIds.stream()
+                .map(userService::getById) // 假设UserService有此方法
+                .map(UserResponse::toDTO) // 将User实体转换为UserResponse DTO
+                .collect(Collectors.toList());
+    }
+
 }

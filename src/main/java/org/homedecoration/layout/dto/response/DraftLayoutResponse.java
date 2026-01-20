@@ -23,6 +23,7 @@ public class DraftLayoutResponse {
     private Long designerId;
     private String designerUsername;
     private String designerEmail;
+    private String avatarUrl;
 
     // ===== Bill =====
     private Long billId;
@@ -50,6 +51,7 @@ public class DraftLayoutResponse {
         resp.setDesignerId(designer.getUser().getId());
         resp.setDesignerUsername(designer.getRealName());
         resp.setDesignerEmail(designer.getUser().getEmail());
+        resp.setAvatarUrl(designer.getUser().getAvatarUrl());
 
         // bill（⚠ 可能为空）
         if (bill != null) {

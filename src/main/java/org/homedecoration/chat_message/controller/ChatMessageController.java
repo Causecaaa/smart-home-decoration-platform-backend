@@ -9,6 +9,7 @@ import org.homedecoration.chat_message.entity.ChatMessage;
 import org.homedecoration.chat_message.service.ChatMessageService;
 import org.homedecoration.common.response.ApiResponse;
 import org.homedecoration.common.utils.JwtUtil;
+import org.homedecoration.identity.user.dto.response.UserResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -82,6 +83,13 @@ public class ChatMessageController {
         Long userId = jwtUtil.getUserId(httpRequest);
         chatMessageService.deleteMessage(messageId, userId);
         return ApiResponse.success( "消息删除成功");
+    }
+
+    @GetMapping("/chat-partners")
+    public ApiResponse<List<UserResponse>> getChatPartners(HttpServletRequest httpRequest) {
+        Long userId = jwtUtil.getUserId(httpRequest);
+        List<UserResponse> partners = chatMessageService.getChatPartnersByCurrentUser(userId);
+        return ApiResponse.success(partners);
     }
 
 }
