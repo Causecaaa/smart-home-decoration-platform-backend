@@ -9,6 +9,7 @@ import org.homedecoration.identity.designer.dto.request.UpdateDesignerProfileReq
 import org.homedecoration.identity.designer.dto.response.DesignerDetailResponse;
 import org.homedecoration.identity.designer.dto.response.DesignerLayoutResponse;
 import org.homedecoration.identity.designer.dto.response.DesignerSimpleResponse;
+import org.homedecoration.identity.designer.dto.response.LayoutResponse;
 import org.homedecoration.identity.designer.service.DesignerService;
 import org.homedecoration.layout.entity.HouseLayout;
 import org.springframework.web.bind.annotation.*;
@@ -111,17 +112,25 @@ public class DesignerController {
     }
 
     @GetMapping("/layouts")
-    public ApiResponse<List<HouseLayout>> getPendingLayouts(HttpServletRequest request) {
-        Long designerId = jwtUtil.getUserId(request);  // token获取设计师ID
+    public ApiResponse<List<LayoutResponse>> getPendingLayouts(HttpServletRequest request) {
+        Long designerId = jwtUtil.getUserId(request);
         List<HouseLayout> pendingLayouts = designerService.getPendingLayoutsForDesigner(designerId);
-        return ApiResponse.success(pendingLayouts);
+        return ApiResponse.success(
+                pendingLayouts.stream()
+                        .map(LayoutResponse::toDTO)
+                        .toList()
+        );
     }
 
     @GetMapping("/furniture/layouts")
-    public ApiResponse<List<HouseLayout>> getPendingFurnitureLayouts(HttpServletRequest request) {
+    public ApiResponse<List<LayoutResponse>> getPendingFurnitureLayouts(HttpServletRequest request) {
         Long designerId = jwtUtil.getUserId(request);  // token 获取设计师 ID
-        List<HouseLayout> layouts = designerService.getPendingFurnitureLayoutsForDesigner(designerId);
-        return ApiResponse.success(layouts);
+        List<HouseLayout> pendingLayouts = designerService.getPendingFurnitureLayoutsForDesigner(designerId);
+        return ApiResponse.success(
+                pendingLayouts.stream()
+                        .map(LayoutResponse::toDTO)
+                        .toList()
+        );
     }
 
 }

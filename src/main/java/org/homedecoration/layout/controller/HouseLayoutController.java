@@ -59,10 +59,8 @@ public class HouseLayoutController {
     public ApiResponse<HouseLayoutResponse> createLayout(
             @RequestBody @Valid CreateLayoutRequest request,
             HttpServletRequest httpRequest) {
-        System.out.println("**************************************************");
         request.setUserId(jwtUtil.getUserId(httpRequest));
 
-        System.out.println(request.getUserId());
         return ApiResponse.success(
                 HouseLayoutResponse.toDTO(
                         houseLayoutService.createLayout(request)

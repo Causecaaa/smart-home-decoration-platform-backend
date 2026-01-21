@@ -9,6 +9,12 @@ import java.math.BigDecimal;
 
 @Data
 public class DraftLayoutResponse {
+    private Long userId;
+    private String userPhone;
+    private String userEmail;
+    private String userName;
+
+    private Long houseId;
 
     // ===== Layout =====
     private Long layoutId;
@@ -37,6 +43,13 @@ public class DraftLayoutResponse {
                                             Designer designer) {
 
         DraftLayoutResponse resp = new DraftLayoutResponse();
+
+        resp.setUserId(layout.getHouse().getUser().getId());
+        resp.setUserPhone(layout.getHouse().getUser().getPhone());
+        resp.setUserEmail(layout.getHouse().getUser().getEmail());
+        resp.setUserName(layout.getHouse().getUser().getUsername());
+
+        resp.setHouseId(layout.getHouse().getId());
 
         // layout
         resp.setLayoutId(layout.getId());
