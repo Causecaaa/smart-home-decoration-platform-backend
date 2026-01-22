@@ -7,10 +7,7 @@ import org.homedecoration.common.response.ApiResponse;
 import org.homedecoration.common.utils.JwtUtil;
 import org.homedecoration.layout.dto.request.CreateLayoutRequest;
 import org.homedecoration.layout.dto.request.UpdateLayoutRequest;
-import org.homedecoration.layout.dto.response.DraftLayoutResponse;
-import org.homedecoration.layout.dto.response.FurnitureLayoutResponse;
-import org.homedecoration.layout.dto.response.HouseLayoutResponse;
-import org.homedecoration.layout.dto.response.LayoutOverviewResponse;
+import org.homedecoration.layout.dto.response.*;
 import org.homedecoration.layout.entity.HouseLayout;
 import org.homedecoration.layout.service.HouseLayoutService;
 import org.springframework.web.bind.annotation.*;
@@ -79,12 +76,20 @@ public class HouseLayoutController {
         );
     }
 
-    @GetMapping("/furniture/{layoutId}")
-    public ApiResponse<FurnitureLayoutResponse> getLayoutDetail(
+    @GetMapping("/user/furniture/{layoutId}")
+    public ApiResponse<UserFurnitureResponse> getUserFurniture(
+            @PathVariable Long layoutId) {
+        return ApiResponse.success(
+                houseLayoutService.getUserFurnitureLayoutById(layoutId)
+        );
+    }
+
+    @GetMapping("/designer/furniture/{layoutId}")
+    public ApiResponse<DesignerFurnitureResponse> getDesignerFurniture(
             @PathVariable Long layoutId) {
 
         return ApiResponse.success(
-                houseLayoutService.getFurnitureLayoutById(layoutId)
+                houseLayoutService.getDesignerFurnitureLayoutById(layoutId)
         );
     }
 

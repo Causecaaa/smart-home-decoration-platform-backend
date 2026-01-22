@@ -4,12 +4,13 @@ import lombok.Data;
 import org.homedecoration.bill.entity.Bill;
 import org.homedecoration.furnitureScheme.entity.FurnitureScheme;
 import org.homedecoration.identity.designer.entity.Designer;
+import org.homedecoration.identity.user.entity.User;
 import org.homedecoration.layout.entity.HouseLayout;
 
 import java.math.BigDecimal;
 
 @Data
-public class FurnitureLayoutResponse {
+public class UserFurnitureResponse {
     private Long userId;
     private Long houseId;
     private Long layoutId;
@@ -25,12 +26,13 @@ public class FurnitureLayoutResponse {
     private BigDecimal depositAmount;
     private Bill.PayStatus payStatus;
 
-    public static FurnitureLayoutResponse toDTO(HouseLayout layout,
-                                                FurnitureScheme.SchemeStatus furnitureStatus,
-                                                Designer designer,
-                                                Bill bill) {
-        FurnitureLayoutResponse dto = new FurnitureLayoutResponse();
+    public static UserFurnitureResponse toDTO(HouseLayout layout,
+                                              FurnitureScheme.SchemeStatus furnitureStatus,
+                                              Designer designer,
+                                              Bill bill) {
+        UserFurnitureResponse dto = new UserFurnitureResponse();
         dto.setLayoutId(layout.getId());
+
         dto.setUserId(layout.getHouse().getUser().getId());
         dto.setHouseId(layout.getHouse().getId());
 

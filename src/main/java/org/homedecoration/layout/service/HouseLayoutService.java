@@ -21,10 +21,7 @@ import org.homedecoration.identity.user.repository.UserRepository;
 import org.homedecoration.identity.user.service.UserService;
 import org.homedecoration.layout.dto.request.CreateLayoutRequest;
 import org.homedecoration.layout.dto.request.UpdateLayoutRequest;
-import org.homedecoration.layout.dto.response.DraftLayoutResponse;
-import org.homedecoration.layout.dto.response.FurnitureLayoutResponse;
-import org.homedecoration.layout.dto.response.LayoutDesignerResponse;
-import org.homedecoration.layout.dto.response.LayoutOverviewResponse;
+import org.homedecoration.layout.dto.response.*;
 import org.homedecoration.layout.entity.HouseLayout;
 import org.homedecoration.layout.repository.HouseLayoutRepository;
 import org.springframework.stereotype.Service;
@@ -132,7 +129,7 @@ public class HouseLayoutService {
     }
 
     @Transactional
-    public FurnitureLayoutResponse getFurnitureLayoutById(Long layoutId) {
+    public UserFurnitureResponse getUserFurnitureLayoutById(Long layoutId) {
         HouseLayout layout = getLayoutById(layoutId);
 
         FurnitureScheme.SchemeStatus schemeStatus = determineFurnitureSchemeStatusByRooms(layoutId);
@@ -144,7 +141,19 @@ public class HouseLayoutService {
 
         Bill bill = billRepository.findByBizTypeAndBizId(Bill.BizType.FURNITURE, layoutId).orElse(null);
 
-        return FurnitureLayoutResponse.toDTO(layout, schemeStatus, designer, bill);
+        return UserFurnitureResponse.toDTO(layout, schemeStatus, designer, bill);
+    }
+
+    @Transactional
+    public DesignerFurnitureResponse getDesignerFurnitureLayoutById(Long layoutId) {
+        HouseLayout layout = getLayoutById(layoutId);
+
+        FurnitureScheme.SchemeStatus schemeStatus = determineFurnitureSchemeStatusByRooms(layoutId);
+
+
+        Bill bill = billRepository.findByBizTypeAndBizId(Bill.BizType.FURNITURE, layoutId).orElse(null);
+
+        return DesignerFurnitureResponse.toDTO(layout, schemeStatus, bill);
     }
 
     private FurnitureScheme.SchemeStatus determineFurnitureSchemeStatusByRooms(Long layoutId) {

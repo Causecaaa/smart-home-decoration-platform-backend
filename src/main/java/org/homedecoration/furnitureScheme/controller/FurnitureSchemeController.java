@@ -38,8 +38,6 @@ public class FurnitureSchemeController {
     }
 
 
-
-
     // 更新方案图片（覆盖）
     @PostMapping("/{schemeId}/update-image")
     public ApiResponse<FurnitureSchemeResponse> updateSchemeImage(
