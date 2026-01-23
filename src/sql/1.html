@@ -12,7 +12,6 @@ CREATE TABLE `user` (
 `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统用户表';
 
-house_room
 -- 设计师扩展信息表
 CREATE TABLE `designer` (
 `user_id` BIGINT PRIMARY KEY COMMENT '用户ID（与 user 表共享主键）',
@@ -21,7 +20,6 @@ CREATE TABLE `designer` (
 `experience_years` INT COMMENT '从业年限',
 `style` VARCHAR(100) COMMENT '擅长风格',
 `bio` VARCHAR(500) COMMENT '设计师简介',
-
 `rating` DOUBLE COMMENT '设计师评分',
 `order_count` INT DEFAULT 0 COMMENT '累计接单数',
 
@@ -70,9 +68,7 @@ CONSTRAINT fk_house_user FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CAS
 CREATE TABLE house_layout (
 layout_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '布局主键',
 house_id BIGINT NOT NULL COMMENT '所属房屋',
--- 布局设计师
 designer_id BIGINT COMMENT '布局设计师（Layout阶段）',
--- 家具设计师（Furniture阶段）
 furniture_designer_id BIGINT COMMENT '家具设计师（Furniture阶段）',
 layout_intent VARCHAR(20) COMMENT '布局意图（KEEP_ORIGINAL / REDESIGN）',
 redesign_notes VARCHAR(255) COMMENT '改造需求说明',
@@ -80,6 +76,7 @@ layout_version VARCHAR(20) COMMENT '布局版本号（v1 / v2）',
 layout_status VARCHAR(20) COMMENT '房屋空间布局状态：DRAFT / SUBMITTED / CONFIRMED / ARCHIVED',
 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
 CONSTRAINT fk_layout_house FOREIGN KEY (house_id) REFERENCES house(house_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='房屋布局信息表';
 
@@ -92,6 +89,7 @@ image_type VARCHAR(20) COMMENT '图片类型（ORIGINAL / STRUCTURE / FURNITURE�
 image_desc VARCHAR(255) COMMENT '图片说明',
 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
 CONSTRAINT fk_image_layout FOREIGN KEY (layout_id) REFERENCES house_layout(layout_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='布局/设计图片表';
 
@@ -108,6 +106,7 @@ area DECIMAL(6,2) COMMENT '空间面积（㎡）',
 has_window BOOLEAN COMMENT '是否有窗',
 has_balcony BOOLEAN COMMENT '是否带阳台',
 notes VARCHAR(255) COMMENT '用户补充说明',
+
 CONSTRAINT fk_room_layout FOREIGN KEY (layout_id) REFERENCES house_layout(layout_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='房间信息表';
 
@@ -120,6 +119,8 @@ scheme_status VARCHAR(20) COMMENT '状态：draft / submitted / confirmed',
 scheme_version VARCHAR(20) COMMENT '方案版本号（v1 / v2 / v3）',
 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+image_url VARCHAR(255) COMMENT '图片地址',
+
 CONSTRAINT fk_scheme_room
 FOREIGN KEY (room_id)
 REFERENCES house_room(room_id)
@@ -172,6 +173,7 @@ CREATE TABLE `chat_message` (
 `content` VARCHAR(1000) NOT NULL COMMENT '消息内容',
 `content_type` VARCHAR(20) NOT NULL DEFAULT 'TEXT' COMMENT '消息类型：TEXT / IMAGE / FILE / LINK',
 `timestamp` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '发送时间',
+
 CONSTRAINT `fk_chat_sender` FOREIGN KEY (`sender_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
 CONSTRAINT `fk_chat_receiver` FOREIGN KEY (`receiver_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户聊天消息表';
