@@ -177,3 +177,25 @@ CREATE TABLE `chat_message` (
 CONSTRAINT `fk_chat_sender` FOREIGN KEY (`sender_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
 CONSTRAINT `fk_chat_receiver` FOREIGN KEY (`receiver_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户聊天消息表';
+
+
+-- 聊天会话状态表
+CREATE TABLE `chat_session` (
+`id` BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '会话ID',
+
+`user_id` BIGINT NOT NULL COMMENT '当前用户ID（会话视角）',
+`partner_id` BIGINT NOT NULL COMMENT '聊天对象用户ID',
+
+last_message_content VARCHAR(1000) COMMENT '最后一条消息内容（摘要）',
+last_message_type VARCHAR(20) COMMENT 'TEXT / IMAGE ...',
+last_message_time DATETIME COMMENT '最后一条消息时间',
+
+`last_read_time` DATETIME DEFAULT NULL COMMENT '最后一次已读时间',
+
+UNIQUE KEY `uk_user_partner` (`user_id`, `partner_id`),
+
+CONSTRAINT `fk_session_user` FOREIGN KEY (`user_id`)
+REFERENCES `user`(`id`) ON DELETE CASCADE,
+CONSTRAINT `fk_session_partner` FOREIGN KEY (`partner_id`)
+REFERENCES `user`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='聊天会话状态表';

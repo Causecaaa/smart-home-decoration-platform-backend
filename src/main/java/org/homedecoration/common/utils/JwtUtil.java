@@ -60,11 +60,14 @@ public class JwtUtil {
         return getEmail(token);
     }
 
-    private Claims parseToken(String token) {
+    public Claims parseToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(KEY)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
     }
+
+
+
 }

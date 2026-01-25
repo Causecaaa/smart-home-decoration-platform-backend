@@ -29,4 +29,14 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
             "GROUP BY otherUserId " +
             "ORDER BY latestTime DESC")
     List<Object[]> findDistinctChatUserIdsByUserId(@Param("userId") Long userId);
+
+
+    // 查找两个人会话的最后一条消息
+    Optional<ChatMessage> findTopBySenderIdAndReceiverIdOrReceiverIdAndSenderIdOrderByTimestampDesc(
+            Long senderId, Long receiverId,
+            Long senderId2, Long receiverId2
+    );
+
+
+
 }

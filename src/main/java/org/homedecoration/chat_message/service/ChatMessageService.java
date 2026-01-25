@@ -5,9 +5,14 @@ import lombok.RequiredArgsConstructor;
 import org.homedecoration.chat_message.dto.request.ChatMessageRequest;
 import org.homedecoration.chat_message.entity.ChatMessage;
 import org.homedecoration.chat_message.repository.ChatMessageRepository;
+import org.homedecoration.chat_session.dto.ChatSessionResponse;
+import org.homedecoration.chat_session.entity.ChatSession;
+import org.homedecoration.chat_session.repository.ChatSessionRepository;
 import org.homedecoration.identity.user.dto.response.UserResponse;
+import org.homedecoration.identity.user.entity.User;
 import org.homedecoration.identity.user.repository.UserRepository;
 import org.homedecoration.identity.user.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,7 +25,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,6 +40,26 @@ public class ChatMessageService {
     private String uploadDir;
 
     private final ChatMessageRepository chatMessageRepository;
+    private final ChatSessionRepository chatSessionRepository;
+
+    private void updateOrCreateSession(Long userId, Long partnerId, String content, String type, LocalDateTime lastReadTime) {
+        ChatSession session = chatSessionRepository
+                .findByUserIdAndPartnerId(userId, partnerId)
+                .orElseGet(() -> {
+                    ChatSession s = new ChatSession();
+                    s.setUserId(userId);
+                    s.setPartnerId(partnerId);
+                    return s;
+                });
+
+        session.setLastMessageContent(content);
+        session.setLastMessageType(type);
+        session.setLastMessageTime(LocalDateTime.now());
+        session.setLastReadTime(lastReadTime);
+
+        chatSessionRepository.save(session);
+    }
+
 
     @Transactional
     public ChatMessage sendTextMessage(ChatMessageRequest request) {
@@ -48,8 +75,15 @@ public class ChatMessageService {
         message.setContent(request.getText());
         message.setContentType(ChatMessage.ContentType.TEXT);
 
-        return chatMessageRepository.save(message);
+        chatMessageRepository.save(message);
+
+        updateOrCreateSession(request.getSenderId(), request.getReceiverId(), message.getContent(), message.getContentType().name(), LocalDateTime.now());
+        updateOrCreateSession(request.getReceiverId(), request.getSenderId(), message.getContent(), message.getContentType().name(), null);
+
+        return message;
     }
+
+
 
 
     @Transactional
@@ -68,18 +102,31 @@ public class ChatMessageService {
         message.setContent("/uploads/chat/" + filename);
         message.setContentType(ChatMessage.ContentType.IMAGE);
 
-        return chatMessageRepository.save(message);
+        chatMessageRepository.save(message);
+
+        updateOrCreateSession(senderId, receiverId, message.getContent(), message.getContentType().name(), LocalDateTime.now());
+        updateOrCreateSession(receiverId, senderId, message.getContent(), message.getContentType().name(), null);
+
+        return message;
     }
 
     @Transactional
     public List<ChatMessage> getConversation(Long myId, Long otherId) {
         // 查询两个人之间的所有消息
-        return chatMessageRepository
+        List<ChatMessage> messages = chatMessageRepository
                 .findBySenderIdAndReceiverIdOrReceiverIdAndSenderIdOrderByTimestampAsc(
                         myId, otherId,
                         myId, otherId
                 );
+
+        chatSessionRepository.findByUserIdAndPartnerId(myId, otherId).ifPresent(session -> {
+            session.setLastReadTime(LocalDateTime.now());
+            chatSessionRepository.save(session);
+        });
+
+        return messages;
     }
+
 
     @Transactional
     public void deleteMessage(Long messageId, Long requesterId) {
@@ -96,26 +143,47 @@ public class ChatMessageService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "发送超过三分钟的消息不能删除");
         }
 
+        Long senderId = message.getSenderId();
+        Long receiverId = message.getReceiverId();
+
         // 删除消息
         chatMessageRepository.delete(message);
+
+        // 查找最后一条消息（Optional 安全处理）
+        Optional<ChatMessage> lastMsgOpt = chatMessageRepository
+                .findTopBySenderIdAndReceiverIdOrReceiverIdAndSenderIdOrderByTimestampDesc(
+                        senderId, receiverId, senderId, receiverId
+                );
+
+        String lastContent = null;
+        String lastType = null;
+        LocalDateTime lastTime = null;
+
+        if (lastMsgOpt.isPresent()) {
+            ChatMessage lastMsg = lastMsgOpt.get();
+            lastContent = lastMsg.getContent();
+            lastType = lastMsg.getContentType().name();
+            lastTime = LocalDateTime.from(lastMsg.getTimestamp());
+        }
+
+        // 更新双方会话
+        updateOrCreateSession(senderId, receiverId, lastContent, lastType, lastTime);  // 发送方已读
+        updateOrCreateSession(receiverId, senderId, lastContent, lastType, null);       // 接收方未读
     }
 
 
 
 
-    // 在 ChatMessageService 中
     @Transactional
-    public List<UserResponse> getChatPartnersByCurrentUser(Long userId) {
-        List<Object[]> results = chatMessageRepository.findDistinctChatUserIdsByUserId(userId);
+    public List<ChatSessionResponse> getChatPartnersWithSessionInfo(Long userId) {
+        // 获取用户的所有会话
+        List<ChatSession> sessions = chatSessionRepository.findByUserIdOrderByLastMessageTimeDesc(userId);
 
-        List<Long> partnerIds = results.stream()
-                .map(result -> ((Number) result[0]).longValue())
-                .collect(Collectors.toList());
-
-        // 根据用户ID获取用户详细信息
-        return partnerIds.stream()
-                .map(userService::getById) // 假设UserService有此方法
-                .map(UserResponse::toDTO) // 将User实体转换为UserResponse DTO
+        return sessions.stream()
+                .map(session -> {
+                    User partner = userService.getById(session.getPartnerId());
+                    return ChatSessionResponse.toDTO(partner, session);
+                })
                 .collect(Collectors.toList());
     }
 

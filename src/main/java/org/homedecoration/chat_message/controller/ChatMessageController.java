@@ -7,9 +7,11 @@ import org.homedecoration.chat_message.dto.request.ChatMessageRequest;
 import org.homedecoration.chat_message.dto.response.ChatMessageResponse;
 import org.homedecoration.chat_message.entity.ChatMessage;
 import org.homedecoration.chat_message.service.ChatMessageService;
+import org.homedecoration.chat_session.dto.ChatSessionResponse;
 import org.homedecoration.common.response.ApiResponse;
 import org.homedecoration.common.utils.JwtUtil;
 import org.homedecoration.identity.user.dto.response.UserResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,6 +28,7 @@ public class ChatMessageController {
 
     private final ChatMessageService chatMessageService;
     private final JwtUtil jwtUtil;
+
 
     @PostMapping("/text-create")
     public ApiResponse<ChatMessageResponse> sendTextMessage(
@@ -86,10 +89,11 @@ public class ChatMessageController {
     }
 
     @GetMapping("/chat-partners")
-    public ApiResponse<List<UserResponse>> getChatPartners(HttpServletRequest httpRequest) {
+    public ApiResponse<List<ChatSessionResponse>> getChatPartners(HttpServletRequest httpRequest) {
         Long userId = jwtUtil.getUserId(httpRequest);
-        List<UserResponse> partners = chatMessageService.getChatPartnersByCurrentUser(userId);
+        List<ChatSessionResponse> partners = chatMessageService.getChatPartnersWithSessionInfo(userId);
         return ApiResponse.success(partners);
     }
+
 
 }
