@@ -4,7 +4,9 @@ import lombok.Data;
 import org.homedecoration.chat_session.entity.ChatSession;
 import org.homedecoration.identity.user.entity.User;
 
+import java.awt.*;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Data
 public class ChatSessionResponse {
@@ -25,7 +27,7 @@ public class ChatSessionResponse {
         dto.setPartnerName(user.getUsername());
         dto.setPartnerAvatar(user.getAvatarUrl());
 
-        dto.setLastMessageContent(session.getLastMessageContent());
+        dto.setLastMessageContent(buildLastMessagePreview(session));
         dto.setLastMessageTime(session.getLastMessageTime());
 
         // unread 判断逻辑
@@ -36,4 +38,24 @@ public class ChatSessionResponse {
 
         return dto;
     }
+
+    private static final int MAX_TEXT_PREVIEW_LENGTH = 20;
+
+    private static String buildLastMessagePreview(ChatSession session) {
+        if (Objects.equals(session.getLastMessageType(), "IMAGE")) {
+            return "[图片]";
+        }
+
+        if (Objects.equals(session.getLastMessageType(), "TEXT")) {
+            String content = session.getLastMessageContent();
+            if (content == null) return "";
+
+            return content.length() > MAX_TEXT_PREVIEW_LENGTH
+                    ? content.substring(0, MAX_TEXT_PREVIEW_LENGTH) + "…"
+                    : content;
+        }
+
+        return "";
+    }
+
 }
