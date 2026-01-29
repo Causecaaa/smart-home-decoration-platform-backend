@@ -20,6 +20,7 @@ public class UserFurnitureResponse {
     private Long furnitureDesignerId;
     private String designerUsername;
     private String designerEmail;
+    private String designerAvatar;
 
     private Long billId;
     private BigDecimal billAmount;
@@ -42,6 +43,7 @@ public class UserFurnitureResponse {
             dto.setFurnitureDesignerId(designer.getUserId());
             dto.setDesignerUsername(designer.getRealName());
             dto.setDesignerEmail(designer.getUser().getEmail());
+            dto.setDesignerAvatar(designer.getUser().getAvatarUrl());
         }
 
 
