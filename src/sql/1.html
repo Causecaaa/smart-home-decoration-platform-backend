@@ -127,6 +127,41 @@ REFERENCES house_room(room_id)
 ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='家具设计方案表（房间级）';
 
+
+
+CREATE TABLE scheme_room_material (
+id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主键',
+
+scheme_id BIGINT NOT NULL COMMENT '方案ID',
+room_id BIGINT NOT NULL COMMENT '房间ID',
+
+-- 地面
+floor_material VARCHAR(50) COMMENT '地面材质',
+floor_area DECIMAL(6,2) COMMENT '地面面积㎡',
+
+-- 墙面
+wall_material VARCHAR(50) COMMENT '墙面材质',
+wall_area DECIMAL(6,2) COMMENT '墙面面积㎡',
+
+-- 吊顶
+ceiling_material VARCHAR(50) COMMENT '吊顶材质',
+ceiling_area DECIMAL(6,2) COMMENT '吊顶面积㎡',
+
+-- 柜体（定制类）
+cabinet_material VARCHAR(50) COMMENT '柜体材质',
+cabinet_area DECIMAL(6,2) COMMENT '柜体展开面积㎡',
+
+remark VARCHAR(255) COMMENT '设计说明',
+
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+FOREIGN KEY (scheme_id) REFERENCES furniture_scheme(scheme_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='房间方案材料汇总表（简化版）';
+
+
+
+
 CREATE TABLE furniture_image (
 image_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '家具设计图ID',
 scheme_id BIGINT NOT NULL COMMENT '所属家具设计方案',

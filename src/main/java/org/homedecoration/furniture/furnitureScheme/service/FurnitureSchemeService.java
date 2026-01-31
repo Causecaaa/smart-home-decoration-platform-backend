@@ -1,10 +1,13 @@
-package org.homedecoration.furnitureScheme.service;
+package org.homedecoration.furniture.furnitureScheme.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.homedecoration.furnitureScheme.dto.request.CreateFurnitureSchemeRequest;
-import org.homedecoration.furnitureScheme.entity.FurnitureScheme;
-import org.homedecoration.furnitureScheme.repository.FurnitureSchemeRepository;
+import org.homedecoration.furniture.SchemeRoomMaterial.entity.SchemeRoomMaterial;
+import org.homedecoration.furniture.SchemeRoomMaterial.repository.SchemeRoomMaterialRepository;
+import org.homedecoration.furniture.furnitureScheme.dto.request.CreateFurnitureSchemeRequest;
+import org.homedecoration.furniture.furnitureScheme.dto.response.FurnitureSchemeResponse;
+import org.homedecoration.furniture.furnitureScheme.entity.FurnitureScheme;
+import org.homedecoration.furniture.furnitureScheme.repository.FurnitureSchemeRepository;
 import org.homedecoration.houseRoom.entity.HouseRoom;
 import org.homedecoration.houseRoom.repository.HouseRoomRepository;
 import org.homedecoration.layout.entity.HouseLayout;
@@ -24,6 +27,7 @@ public class FurnitureSchemeService {
 
     private final FurnitureSchemeRepository schemeRepository;
     private final HouseRoomRepository roomRepository;
+    private final SchemeRoomMaterialRepository schemeRoomMaterialRepository;
 
     @Value("${file.upload-dir}")
     private String uploadDir;
@@ -33,11 +37,15 @@ public class FurnitureSchemeService {
      */
     // 在 FurnitureSchemeService 中
     @Transactional
-    public FurnitureScheme createScheme(Long designerId, CreateFurnitureSchemeRequest request, MultipartFile file) throws IOException {
-        var room = roomRepository.findById(request.getRoomId())
-                .orElseThrow(() -> new IllegalArgumentException("Room not found"));
+    public FurnitureSchemeResponse createScheme(
+            Long designerId,
+            CreateFurnitureSchemeRequest request,
+            MultipartFile file
+    ) throws IOException {
 
-        // 获取该房间已有方案的最大版本号
+        HouseRoom room = roomRepository.findById(request.getRoomId())
+                .orElseThrow(() -> new IllegalArgumentException("房间不存在"));
+
         Integer maxVersion = schemeRepository.findMaxVersionByRoom(room);
         int nextVersion = (maxVersion == null ? 1 : maxVersion + 1);
 
@@ -47,40 +55,62 @@ public class FurnitureSchemeService {
         scheme.setSchemeVersion(nextVersion);
         scheme.setSchemeStatus(FurnitureScheme.SchemeStatus.SUBMITTED);
 
-        // 处理上传的图片
         if (file != null && !file.isEmpty()) {
-            String imageUrl = saveImageFile(file);
-            scheme.setImageUrl(imageUrl);
+            scheme.setImageUrl(saveImageFile(file));
         }
 
-        return schemeRepository.save(scheme);
+        FurnitureScheme savedScheme = schemeRepository.save(scheme);
+
+        SchemeRoomMaterial material = new SchemeRoomMaterial();
+        material.setSchemeId(savedScheme.getId());
+        material.setRoomId(request.getRoomId());
+
+        material.setFloorMaterial(request.getFloorMaterial());
+        material.setFloorArea(request.getFloorArea());
+        material.setWallMaterial(request.getWallMaterial());
+        material.setWallArea(request.getWallArea());
+        material.setCeilingMaterial(request.getCeilingMaterial());
+        material.setCeilingArea(request.getCeilingArea());
+        material.setCabinetMaterial(request.getCabinetMaterial());
+        material.setCabinetArea(request.getCabinetArea());
+        material.setRemark(request.getRemark());
+
+        schemeRoomMaterialRepository.save(material);
+
+        return FurnitureSchemeResponse.toDTO(savedScheme, material);
     }
 
-    // 更新方案图片（覆盖原图）
+
     @Transactional
-    public FurnitureScheme updateSchemeImage(Long schemeId, MultipartFile file, Long designerId) throws IOException {
+    public FurnitureSchemeResponse updateSchemeImage(
+            Long schemeId,
+            MultipartFile file,
+            Long designerId
+    ) throws IOException {
+
         FurnitureScheme scheme = getById(schemeId);
 
-        // 权限校验
         if (!scheme.getDesignerId().equals(designerId)) {
             throw new SecurityException("无权限修改此方案");
         }
 
         if (scheme.getSchemeStatus() != FurnitureScheme.SchemeStatus.SUBMITTED) {
-            throw new IllegalStateException("只能修改SUBMITTED状态的方案图片");
+            throw new IllegalStateException("只能修改 SUBMITTED 状态方案");
         }
 
-        // 删除旧图片文件
         if (scheme.getImageUrl() != null) {
             deleteImageFile(scheme.getImageUrl());
         }
 
-        // 保存新图片
-        String newImageUrl = saveImageFile(file);
-        scheme.setImageUrl(newImageUrl);
+        scheme.setImageUrl(saveImageFile(file));
+        schemeRepository.save(scheme);
 
-        return schemeRepository.save(scheme);
+        SchemeRoomMaterial material =
+                schemeRoomMaterialRepository.findBySchemeId(schemeId).orElse(null);
+
+        return FurnitureSchemeResponse.toDTO(scheme, material);
     }
+
 
     private String saveImageFile(MultipartFile file) throws IOException {
         String originalName = file.getOriginalFilename();
@@ -103,10 +133,31 @@ public class FurnitureSchemeService {
     }
 
     @Transactional
-    public List<FurnitureScheme> listByRoom(Long roomId) {
+    public List<FurnitureSchemeResponse> listByRoom(Long roomId) {
+
         HouseRoom room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("房间不存在"));
-        return schemeRepository.findByRoomOrderBySchemeVersionAsc(room);  // 改为升序
+
+        return schemeRepository.findByRoomOrderBySchemeVersionAsc(room)
+                .stream()
+                .map(scheme -> {
+                    SchemeRoomMaterial material =
+                            schemeRoomMaterialRepository
+                                    .findBySchemeId(scheme.getId())
+                                    .orElse(null);
+                    return FurnitureSchemeResponse.toDTO(scheme, material);
+                })
+                .toList();
+    }
+
+    @Transactional
+    public FurnitureSchemeResponse getSchemeDetail(Long schemeId) {
+
+        FurnitureScheme scheme = getById(schemeId);
+        SchemeRoomMaterial material =
+                schemeRoomMaterialRepository.findBySchemeId(schemeId).orElse(null);
+
+        return FurnitureSchemeResponse.toDTO(scheme, material);
     }
 
 
@@ -117,40 +168,35 @@ public class FurnitureSchemeService {
     }
 
     @Transactional
-    public FurnitureScheme confirmScheme(Long userId, Long schemeId) {
+    public FurnitureSchemeResponse confirmScheme(Long userId, Long schemeId) {
 
         FurnitureScheme scheme = getById(schemeId);
-
         HouseRoom room = scheme.getRoom();
         HouseLayout layout = room.getLayout();
 
-        // 1️⃣ 权限校验：只有房屋所属用户才能确认
         if (!layout.getHouse().getUser().getId().equals(userId)) {
             throw new SecurityException("无权限确认该方案");
         }
 
-        // 2️⃣ 状态校验
-        if (scheme.getSchemeStatus() == FurnitureScheme.SchemeStatus.CONFIRMED) {
-            throw new IllegalStateException("该方案已确认");
-        }
-
-        // 3️⃣ 只允许 SUBMITTED 状态被确认
         if (scheme.getSchemeStatus() != FurnitureScheme.SchemeStatus.SUBMITTED) {
             throw new IllegalStateException("当前方案不可确认");
         }
 
-        // 4️⃣ 归档该房间下其他方案
         schemeRepository.archiveOtherSchemes(
                 room,
                 schemeId,
                 FurnitureScheme.SchemeStatus.ARCHIVED
         );
 
-        // 5️⃣ 确认当前方案
         scheme.setSchemeStatus(FurnitureScheme.SchemeStatus.CONFIRMED);
+        schemeRepository.save(scheme);
 
-        return schemeRepository.save(scheme);
+        SchemeRoomMaterial material =
+                schemeRoomMaterialRepository.findBySchemeId(schemeId).orElse(null);
+
+        return FurnitureSchemeResponse.toDTO(scheme, material);
     }
+
 
 
     @Transactional

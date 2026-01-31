@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-import org.homedecoration.furnitureScheme.entity.FurnitureScheme;
+import org.homedecoration.furniture.furnitureScheme.entity.FurnitureScheme;
 import org.homedecoration.layout.entity.HouseLayout;
 
 import java.math.BigDecimal;

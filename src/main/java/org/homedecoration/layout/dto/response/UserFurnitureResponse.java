@@ -2,9 +2,8 @@ package org.homedecoration.layout.dto.response;
 
 import lombok.Data;
 import org.homedecoration.bill.entity.Bill;
-import org.homedecoration.furnitureScheme.entity.FurnitureScheme;
+import org.homedecoration.furniture.furnitureScheme.entity.FurnitureScheme;
 import org.homedecoration.identity.designer.entity.Designer;
-import org.homedecoration.identity.user.entity.User;
 import org.homedecoration.layout.entity.HouseLayout;
 
 import java.math.BigDecimal;

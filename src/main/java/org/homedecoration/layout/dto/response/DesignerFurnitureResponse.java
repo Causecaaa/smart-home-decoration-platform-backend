@@ -4,9 +4,8 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.homedecoration.bill.entity.Bill;
-import org.homedecoration.furnitureScheme.entity.FurnitureScheme;
+import org.homedecoration.furniture.furnitureScheme.entity.FurnitureScheme;
 import org.homedecoration.house.entity.House;
-import org.homedecoration.house.repository.HouseRepository;
 import org.homedecoration.identity.user.entity.User;
 import org.homedecoration.layout.entity.HouseLayout;
 

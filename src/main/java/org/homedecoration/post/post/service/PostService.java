@@ -71,6 +71,18 @@ public class PostService {
                 .toList();
     }
 
+
+    public SimplePostResponse getSimple(Long postId, Long userId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("文章不存在"));
+
+        User author = userService.getById(post.getUserId());
+
+        List<PostImage> images =
+                imageRepository.findByPostIdOrderByCreatedAtAsc(postId);
+
+        return SimplePostResponse.toDTO(post, author, images);
+    }
     public DetailPostResponse getDetail(Long postId, Long userId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("文章不存在"));

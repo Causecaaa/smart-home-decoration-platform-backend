@@ -7,7 +7,7 @@ import org.homedecoration.bill.repository.BillRepository;
 import org.homedecoration.bill.service.BillService;
 import org.homedecoration.common.exception.BusinessException;
 import org.homedecoration.common.utils.LayoutPermissionUtil;
-import org.homedecoration.furnitureScheme.entity.FurnitureScheme;
+import org.homedecoration.furniture.furnitureScheme.entity.FurnitureScheme;
 import org.homedecoration.house.entity.House;
 import org.homedecoration.house.repository.HouseRepository;
 import org.homedecoration.house.service.HouseService;

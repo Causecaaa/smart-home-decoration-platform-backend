@@ -1,11 +1,11 @@
-package org.homedecoration.furnitureImage.service;
+package org.homedecoration.furniture.furnitureImage.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.homedecoration.furnitureImage.entity.FurnitureImage;
-import org.homedecoration.furnitureImage.repository.FurnitureImageRepository;
-import org.homedecoration.furnitureScheme.entity.FurnitureScheme;
-import org.homedecoration.furnitureScheme.service.FurnitureSchemeService;
+import org.homedecoration.furniture.furnitureImage.entity.FurnitureImage;
+import org.homedecoration.furniture.furnitureImage.repository.FurnitureImageRepository;
+import org.homedecoration.furniture.furnitureScheme.entity.FurnitureScheme;
+import org.homedecoration.furniture.furnitureScheme.service.FurnitureSchemeService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;

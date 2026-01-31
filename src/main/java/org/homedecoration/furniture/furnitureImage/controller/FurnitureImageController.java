@@ -1,12 +1,12 @@
-package org.homedecoration.furnitureImage.controller;
+package org.homedecoration.furniture.furnitureImage.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.homedecoration.common.response.ApiResponse;
 import org.homedecoration.common.utils.JwtUtil;
-import org.homedecoration.furnitureImage.dto.response.FurnitureImageResponse;
-import org.homedecoration.furnitureImage.entity.FurnitureImage;
-import org.homedecoration.furnitureImage.service.FurnitureImageService;
+import org.homedecoration.furniture.furnitureImage.dto.response.FurnitureImageResponse;
+import org.homedecoration.furniture.furnitureImage.entity.FurnitureImage;
+import org.homedecoration.furniture.furnitureImage.service.FurnitureImageService;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 

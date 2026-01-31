@@ -1,8 +1,8 @@
-package org.homedecoration.furnitureImage.dto.response;
+package org.homedecoration.furniture.furnitureImage.dto.response;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.homedecoration.furnitureImage.entity.FurnitureImage;
+import org.homedecoration.furniture.furnitureImage.entity.FurnitureImage;
 
 import java.time.Instant;
 

@@ -1,7 +1,7 @@
-package org.homedecoration.furnitureImage.repository;
+package org.homedecoration.furniture.furnitureImage.repository;
 
-import org.homedecoration.furnitureImage.entity.FurnitureImage;
-import org.homedecoration.furnitureScheme.entity.FurnitureScheme;
+import org.homedecoration.furniture.furnitureImage.entity.FurnitureImage;
+import org.homedecoration.furniture.furnitureScheme.entity.FurnitureScheme;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

@@ -1,4 +1,4 @@
-package org.homedecoration.furnitureImage.dto.request;
+package org.homedecoration.furniture.furnitureImage.dto.request;
 
 import lombok.Getter;
 import lombok.Setter;

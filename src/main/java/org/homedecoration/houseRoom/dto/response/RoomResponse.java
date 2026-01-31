@@ -1,7 +1,7 @@
 package org.homedecoration.houseRoom.dto.response;
 
 import lombok.Data;
-import org.homedecoration.furnitureScheme.entity.FurnitureScheme;
+import org.homedecoration.furniture.furnitureScheme.entity.FurnitureScheme;
 import org.homedecoration.houseRoom.entity.HouseRoom;
 
 import java.math.BigDecimal;

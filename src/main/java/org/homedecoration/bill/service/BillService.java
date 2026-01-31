@@ -1,11 +1,10 @@
 package org.homedecoration.bill.service;
 
 import org.homedecoration.bill.dto.request.CreateBillRequest;
-import org.homedecoration.bill.dto.response.BillResponse;
 import org.homedecoration.bill.entity.Bill;
 import org.homedecoration.bill.repository.BillRepository;
 import org.homedecoration.common.exception.BusinessException;
-import org.homedecoration.furnitureScheme.repository.FurnitureSchemeRepository;
+import org.homedecoration.furniture.furnitureScheme.repository.FurnitureSchemeRepository;
 import org.homedecoration.layout.repository.HouseLayoutRepository;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;

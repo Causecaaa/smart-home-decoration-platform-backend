@@ -49,7 +49,7 @@ public class PostCommentController {
 
     @DeleteMapping("/{commentId}")
     public ApiResponse<Void> delete(
-            @PathVariable Long postId,   // 这里暂时不用，但路径语义正确
+            @PathVariable Long postId,
             @PathVariable Long commentId,
             HttpServletRequest httpRequest
     ) {

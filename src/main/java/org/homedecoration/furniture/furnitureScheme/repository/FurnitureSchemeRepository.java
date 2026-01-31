@@ -1,6 +1,6 @@
-package org.homedecoration.furnitureScheme.repository;
+package org.homedecoration.furniture.furnitureScheme.repository;
 
-import org.homedecoration.furnitureScheme.entity.FurnitureScheme;
+import org.homedecoration.furniture.furnitureScheme.entity.FurnitureScheme;
 import org.homedecoration.houseRoom.entity.HouseRoom;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

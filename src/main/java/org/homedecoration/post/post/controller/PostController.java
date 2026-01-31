@@ -46,6 +46,20 @@ public class PostController {
     }
 
     /**
+     * 文章详情（Simple）
+     */
+    @GetMapping("/{postId}/simple")
+    public ApiResponse<SimplePostResponse> simple(
+            @PathVariable Long postId,
+            HttpServletRequest httpRequest
+    ) {
+        Long userId = jwtUtil.getUserId(httpRequest);
+        return ApiResponse.success(
+                postService.getSimple(postId, userId)
+        );
+    }
+
+    /**
      * 文章详情（Detail）
      */
     @GetMapping("/{postId}")

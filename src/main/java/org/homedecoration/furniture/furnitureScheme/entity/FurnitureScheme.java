@@ -1,4 +1,4 @@
-package org.homedecoration.furnitureScheme.entity;
+package org.homedecoration.furniture.furnitureScheme.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -7,11 +7,9 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.homedecoration.furnitureImage.entity.FurnitureImage;
 import org.homedecoration.houseRoom.entity.HouseRoom;
 
 import java.time.Instant;
-import java.util.List;
 
 @Getter
 @Setter
