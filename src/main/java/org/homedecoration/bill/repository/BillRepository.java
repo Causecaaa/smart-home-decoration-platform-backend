@@ -29,5 +29,15 @@ public interface BillRepository extends JpaRepository<Bill, Long> {
             Long payeeId
     );
 
-    boolean existsByBizTypeAndBizId(Bill.BizType bizType, Long bizId);
+    boolean existsByBizTypeAndBizId(
+            Bill.BizType bizType,
+            Long bizId
+    );
+
+    // ✅ 是否已支付（用于是否可施工）
+    boolean existsByBizTypeAndBizIdAndPayStatus(
+            Bill.BizType bizType,
+            Long bizId,
+            Bill.PayStatus payStatus
+    );
 }

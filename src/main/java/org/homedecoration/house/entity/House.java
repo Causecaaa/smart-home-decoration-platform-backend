@@ -77,4 +77,11 @@ public class House {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    @Transient
+    private Boolean canStartQuotation;
+
+    @Transient
+    private Boolean canStartConstruction;
+
+
 }

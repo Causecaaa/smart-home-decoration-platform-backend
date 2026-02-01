@@ -21,7 +21,6 @@ public class Bill {
 
     /* ===== 业务类型 ===== */
     public enum BizType {
-        HOUSE,
         LAYOUT,
         FURNITURE,
         CONSTRUCTION

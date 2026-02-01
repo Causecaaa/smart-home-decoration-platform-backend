@@ -24,6 +24,11 @@ public class HouseResponse {
 
     private Long confirmedLayoutId;
 
+    private Boolean canStartQuotation;
+    private Boolean canStartConstruction;
+
+
+
     public static HouseResponse toDTO(House house) {
         HouseResponse response = new HouseResponse();
         response.setUserId(house.getUser().getId());
@@ -40,6 +45,10 @@ public class HouseResponse {
         response.setConfirmedLayoutId(house.getConfirmedLayoutId());
         response.setCreatedAt(house.getCreatedAt());
         response.setUpdatedAt(house.getUpdatedAt());
+
+        response.setCanStartQuotation(house.getCanStartQuotation());
+        response.setCanStartConstruction(house.getCanStartConstruction());
+
         return response;
     }
 }

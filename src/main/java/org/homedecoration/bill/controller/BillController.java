@@ -59,4 +59,13 @@ public class BillController {
                 billService.payFinal(payerId, id)
         );
     }
+
+    @PostMapping("/pay/full/{id}")
+    public ApiResponse<Bill> payFull(HttpServletRequest request, @PathVariable Long id) {
+        Long payerId = jwtUtil.getUserId(request);
+        return ApiResponse.success(
+                billService.payFull(payerId, id)
+        );
+    }
+
 }

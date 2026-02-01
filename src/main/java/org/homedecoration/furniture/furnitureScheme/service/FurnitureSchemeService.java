@@ -205,4 +205,15 @@ public class FurnitureSchemeService {
         schemeRepository.delete(scheme);
     }
 
+    /**
+     * 获取房间的确认方案
+     */
+    @Transactional
+    public FurnitureScheme getConfirmedSchemeByRoomId(Long roomId) {
+        return (FurnitureScheme) schemeRepository.findByRoomIdAndSchemeStatus(
+                roomId,
+                FurnitureScheme.SchemeStatus.CONFIRMED
+        ).orElse(null);
+    }
+
 }

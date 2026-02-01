@@ -8,6 +8,8 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.homedecoration.houseRoom.entity.HouseRoom;
+import org.homedecoration.furniture.furnitureScheme.entity.FurnitureScheme;
+
 
 import java.time.Instant;
 

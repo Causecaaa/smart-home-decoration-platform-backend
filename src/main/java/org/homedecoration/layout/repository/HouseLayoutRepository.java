@@ -38,4 +38,6 @@ public interface HouseLayoutRepository extends JpaRepository<HouseLayout, Long> 
     Collection<Object> findByHouseIdAndLayoutVersionGreaterThan(Long houseId, int i);
 
     Collection<Object> findByHouseIdAndLayoutVersionGreaterThanAndLayoutVersionLessThan(Long houseId, int i, int i1);
+
+    Optional<Object> findByHouseIdAndLayoutStatus(Long houseId, HouseLayout.LayoutStatus layoutStatus);
 }

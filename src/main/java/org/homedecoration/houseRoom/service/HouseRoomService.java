@@ -78,4 +78,23 @@ public class HouseRoomService {
         roomRepository.delete(room);
     }
 
+    /**
+     * 获取房屋中已确认的房间列表
+     * 一个房屋只有一个已确认的布局，返回该布局下的所有房间
+     */
+    @Transactional(readOnly = true)
+    public List<HouseRoom> getConfirmedRoomsByHouseId(Long houseId) {
+        // 查找房屋的已确认布局
+        HouseLayout confirmedLayout = (HouseLayout) layoutRepository.findByHouseIdAndLayoutStatus(houseId, HouseLayout.LayoutStatus.CONFIRMED)
+                .orElse(null);
+
+        if (confirmedLayout == null) {
+            return List.of(); // 如果没有已确认的布局，则返回空列表
+        }
+
+        // 返回该布局下的所有房间
+        return roomRepository.findByLayoutId(confirmedLayout.getId());
+    }
+
+
 }

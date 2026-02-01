@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface FurnitureSchemeRepository extends JpaRepository<FurnitureScheme, Long> {
@@ -34,4 +35,6 @@ public interface FurnitureSchemeRepository extends JpaRepository<FurnitureScheme
     );
 
     List<FurnitureScheme> findByRoomOrderBySchemeVersionAsc(HouseRoom room);
+
+    Optional<Object> findByRoomIdAndSchemeStatus(Long roomId, FurnitureScheme.SchemeStatus schemeStatus);
 }

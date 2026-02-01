@@ -19,7 +19,6 @@ public class FurnitureSchemeResponse {
     private Instant updatedAt;
 
     // ===== 材料信息（核心） =====
-
     private String floorMaterial;
     private Double floorArea;
 
@@ -52,18 +51,27 @@ public class FurnitureSchemeResponse {
 
         // material 信息（注意判空）
         if (material != null) {
-            dto.setFloorMaterial(material.getFloorMaterial());
+            // 设置英文枚举值和中文显示名称
+            if (material.getFloorMaterial() != null) {
+                dto.setFloorMaterial(material.getFloorMaterial().getDisplayName());
+            }
+
+            if (material.getWallMaterial() != null) {
+                dto.setWallMaterial(material.getWallMaterial().getDisplayName());
+            }
+
+            if (material.getCeilingMaterial() != null) {
+                dto.setCeilingMaterial(material.getCeilingMaterial().getDisplayName());
+            }
+
+            if (material.getCabinetMaterial() != null) {
+                dto.setCabinetMaterial(material.getCabinetMaterial().getDisplayName());
+            }
+
             dto.setFloorArea(toDouble(material.getFloorArea()));
-
-            dto.setWallMaterial(material.getWallMaterial());
             dto.setWallArea(toDouble(material.getWallArea()));
-
-            dto.setCeilingMaterial(material.getCeilingMaterial());
             dto.setCeilingArea(toDouble(material.getCeilingArea()));
-
-            dto.setCabinetMaterial(material.getCabinetMaterial());
             dto.setCabinetArea(toDouble(material.getCabinetArea()));
-
             dto.setRemark(material.getRemark());
         }
 

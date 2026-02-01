@@ -59,7 +59,7 @@ public class BillService {
         // 2️⃣ 金额合法性校验（非常重要）
         if (request.getAmount() == null
                 || request.getDepositAmount() == null
-                || request.getDepositAmount().compareTo(BigDecimal.ZERO) <= 0
+                || request.getDepositAmount().compareTo(BigDecimal.ZERO) < 0
                 || request.getDepositAmount().compareTo(request.getAmount()) > 0) {
             throw new RuntimeException("账单金额或定金金额不合法");
         }
@@ -74,10 +74,16 @@ public class BillService {
 
         bill.setPayStatus(Bill.PayStatus.UNPAID);
         bill.setPayerId(payerId);
-        bill.setPayeeId(determinePayee(
-                request.getBizType(),
-                request.getBizId()
-        ));
+
+        if(request.getBizType() == Bill.BizType.CONSTRUCTION){
+            bill.setPayeeId(0L);
+        }else {
+            bill.setPayeeId(determinePayee(
+                    request.getBizType(),
+                    request.getBizId()
+            ));
+        }
+
         bill.setRemark(request.getRemark());
 
         Bill saved = billRepository.save(bill);
@@ -198,5 +204,46 @@ public class BillService {
         return bill;
     }
 
+
+    @Transactional
+    public Bill payFull(Long payerId, Long billId) {
+        // 1️⃣ 分布式锁
+        String lockKey = "bill:pay:lock:" + billId;
+        Boolean locked = redisTemplate.opsForValue()
+                .setIfAbsent(lockKey, "1", 10, TimeUnit.SECONDS);
+
+        if (Boolean.FALSE.equals(locked)) {
+            throw new RuntimeException("支付正在处理中，请稍候");
+        }
+
+        try {
+            // 2️⃣ 公共校验
+            Bill bill = getAndCheckBill(billId, payerId);
+
+            // 3️⃣ 状态检查：只能从 UNPAID 直接支付全额
+            if (bill.getPayStatus() != Bill.PayStatus.UNPAID) {
+                throw new BusinessException("当前账单状态不允许直接支付全额");
+            }
+
+            // 4️⃣ 更新状态
+            bill.setPayStatus(Bill.PayStatus.PAID);
+            bill.setPaidAt(Instant.now());
+
+            Bill saved = billRepository.save(bill);
+
+            // 5️⃣ 缓存支付状态
+            redisTemplate.opsForValue().set(
+                    "bill:pay:status:" + billId,
+                    saved.getPayStatus().name(),
+                    1, TimeUnit.HOURS
+            );
+
+            return saved;
+
+        } finally {
+            // 6️⃣ 释放锁
+            redisTemplate.delete(lockKey);
+        }
+    }
 
 }
