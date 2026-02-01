@@ -20,7 +20,7 @@ public class User {
         USER,
         MERCHANT,
         DESIGNER,
-        INSPECTOR,
+        WORKER,
         ADMIN
     }
 

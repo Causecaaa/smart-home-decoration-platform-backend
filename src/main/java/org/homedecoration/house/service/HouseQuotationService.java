@@ -1,0 +1,288 @@
+package org.homedecoration.house.service;
+
+import lombok.RequiredArgsConstructor;
+import org.homedecoration.bill.dto.request.CreateBillRequest;
+import org.homedecoration.bill.entity.Bill;
+import org.homedecoration.bill.repository.BillRepository;
+import org.homedecoration.bill.service.BillService;
+import org.homedecoration.furniture.SchemeRoomMaterial.entity.SchemeRoomMaterial;
+import org.homedecoration.furniture.SchemeRoomMaterial.service.SchemeRoomMaterialService;
+import org.homedecoration.house.dto.response.HouseMaterialSummaryResponse;
+import org.homedecoration.house.dto.response.HouseQuotationResponse;
+import org.homedecoration.houseRoom.entity.HouseRoom;
+import org.homedecoration.houseRoom.service.HouseRoomService;
+import org.homedecoration.material.auxiliary.AuxiliaryMaterial;
+import org.homedecoration.material.auxiliary.AuxiliaryMaterialRepository;
+import org.homedecoration.material.material.Material;
+import org.homedecoration.material.material.MaterialRepository;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+@Service
+@RequiredArgsConstructor
+public class HouseQuotationService {
+
+    private final MaterialRepository materialRepository;
+    private final AuxiliaryMaterialRepository auxiliaryMaterialRepository;
+    private final HouseRoomService houseRoomService;
+    private final SchemeRoomMaterialService schemeRoomMaterialService;
+    private final HouseService houseService;
+    private final BillService billService;
+    private final BillRepository billRepository;
+
+    // 人工单价（元/㎡），可配置或从数据库读取
+    private final BigDecimal LABOR_UNIT_PRICE = new BigDecimal("100");
+
+
+    /**
+     * 计算房屋报价（主材 + 辅材 + 人工费）
+     */
+    public HouseQuotationResponse calculateHouseQuotation(Long houseId, Long userId) {
+        if(!houseService.getHouseById(houseId).getUser().getId().equals(userId)){
+            throw new RuntimeException("无权限访问");
+        }
+
+        HouseQuotationResponse response = new HouseQuotationResponse();
+
+        // 1️⃣ 获取房间列表
+        List<HouseRoom> rooms = houseRoomService.getConfirmedRoomsByHouseId(houseId);
+        List<HouseQuotationResponse.RoomQuotation> roomQuotations = new ArrayList<>();
+        BigDecimal mainMaterialTotal = BigDecimal.ZERO;
+        BigDecimal totalArea = BigDecimal.ZERO; // 用于人工费计算
+
+        for (HouseRoom room : rooms) {
+            HouseQuotationResponse.RoomQuotation roomQuotation = new HouseQuotationResponse.RoomQuotation();
+            roomQuotation.setRoomId(room.getId());
+            roomQuotation.setRoomName(room.getRoomName());
+
+            // 获取房间主材选材信息
+            SchemeRoomMaterial scheme = schemeRoomMaterialService.getByRoomId(room.getId());
+            HouseQuotationResponse.MainMaterials mainMaterials = new HouseQuotationResponse.MainMaterials();
+
+            // floor
+            mainMaterials.setFloor(buildMaterialDetail(String.valueOf(scheme.getFloorMaterial()), scheme.getFloorArea()));
+            // wall
+            mainMaterials.setWall(buildMaterialDetail(String.valueOf(scheme.getWallMaterial()), scheme.getWallArea()));
+            // ceiling
+            mainMaterials.setCeiling(buildMaterialDetail(String.valueOf(scheme.getCeilingMaterial()), scheme.getCeilingArea()));
+            // cabinet
+            mainMaterials.setCabinet(buildMaterialDetail(String.valueOf(scheme.getCabinetMaterial()), scheme.getCabinetArea()));
+
+            // 房间主材总价
+            BigDecimal roomTotal = BigDecimal.ZERO;
+            BigDecimal roomAreaSum = BigDecimal.ZERO;
+            if (mainMaterials.getFloor() != null) {
+                roomTotal = roomTotal.add(mainMaterials.getFloor().getCost());
+                roomAreaSum = roomAreaSum.add(mainMaterials.getFloor().getArea());
+            }
+            if (mainMaterials.getWall() != null) {
+                roomTotal = roomTotal.add(mainMaterials.getWall().getCost());
+                roomAreaSum = roomAreaSum.add(mainMaterials.getWall().getArea());
+            }
+            if (mainMaterials.getCeiling() != null) {
+                roomTotal = roomTotal.add(mainMaterials.getCeiling().getCost());
+                roomAreaSum = roomAreaSum.add(mainMaterials.getCeiling().getArea());
+            }
+            if (mainMaterials.getCabinet() != null) {
+                roomTotal = roomTotal.add(mainMaterials.getCabinet().getCost());
+                roomAreaSum = roomAreaSum.add(mainMaterials.getCabinet().getArea());
+            }
+
+            roomQuotation.setTotalCost(roomTotal); // 设置房间总费用
+            roomQuotation.setMainMaterials(mainMaterials);
+
+            mainMaterialTotal = mainMaterialTotal.add(roomTotal);
+            totalArea = totalArea.add(roomAreaSum);
+            roomQuotations.add(roomQuotation);
+        }
+
+        response.setRooms(roomQuotations);
+
+        // 2️⃣ 计算辅材明细和总价
+        List<AuxiliaryMaterial> auxiliaries = auxiliaryMaterialRepository.findAll();
+        List<HouseQuotationResponse.AuxiliaryMaterialItem> auxiliaryItems = new ArrayList<>();
+        BigDecimal auxiliaryTotal = BigDecimal.ZERO;
+
+        for (AuxiliaryMaterial aux : auxiliaries) {
+            BigDecimal quantity = calculateAuxiliaryQuantity(aux, houseId);
+            BigDecimal itemCost = aux.getUnitPrice().multiply(quantity);
+
+            HouseQuotationResponse.AuxiliaryMaterialItem item = new HouseQuotationResponse.AuxiliaryMaterialItem();
+            item.setName(aux.getName());
+            item.setCategory(aux.getCategory());
+            item.setUnit(aux.getUnit());
+            item.setUnitPrice(aux.getUnitPrice());
+            item.setQuantity(quantity);
+            item.setCost(itemCost);
+            item.setRemark(aux.getRemark());
+
+            auxiliaryItems.add(item);
+            auxiliaryTotal = auxiliaryTotal.add(itemCost);
+        }
+
+        response.setAuxiliaryMaterials(auxiliaryItems);
+        response.setAuxiliaryMaterialsCost(auxiliaryTotal);
+
+        // 3️⃣ 计算人工费
+        BigDecimal laborCost = totalArea.multiply(LABOR_UNIT_PRICE);
+
+        response.setMainMaterialsCost(mainMaterialTotal);
+        response.setLaborCost(laborCost);
+
+        BigDecimal totalCost = mainMaterialTotal.add(auxiliaryTotal).add(laborCost);
+        // 4️⃣ 总价 = 主材总价 + 辅材总价 + 人工费
+        response.setTotalCost(totalCost);
+
+        boolean exists = billRepository.existsByBizTypeAndBizId(
+                Bill.BizType.CONSTRUCTION,
+                houseId
+        );
+        if(! exists){
+            Bill bill = generateQuotationBill(houseId, userId, totalCost);
+            response.setBillId(bill.getId());
+            response.setPayStatus(Bill.PayStatus.UNPAID);
+        }else {
+            Bill bill = billService.getBill(Bill.BizType.CONSTRUCTION, houseId);
+            response.setBillId(bill.getId());
+            response.setPayStatus(bill.getPayStatus());
+        }
+
+        // 5️⃣ 返回
+        return response;
+    }
+
+
+    public HouseMaterialSummaryResponse calculateHouseMaterials(Long houseId) {
+        HouseMaterialSummaryResponse response = new HouseMaterialSummaryResponse();
+        response.setHouseId(houseId);
+
+        List<HouseRoom> rooms = houseRoomService.getConfirmedRoomsByHouseId(houseId);
+
+        // 初始化主材类别
+        String[] mainTypes = {"FLOOR", "WALL", "CEILING", "CABINET"};
+        for (String type : mainTypes) {
+            response.getMainMaterials().put(type, new ArrayList<>());
+        }
+
+        // 汇总主材
+        for (HouseRoom room : rooms) {
+            SchemeRoomMaterial scheme = schemeRoomMaterialService.getByRoomId(room.getId());
+
+            Map<String, BigDecimal> roomTypeAreas = Map.of(
+                    "FLOOR", scheme.getFloorArea(),
+                    "WALL", scheme.getWallArea(),
+                    "CEILING", scheme.getCeilingArea(),
+                    "CABINET", scheme.getCabinetArea()
+            );
+
+            Map<String, Object> roomTypeMaterials = Map.of(
+                    "FLOOR", scheme.getFloorMaterial(),
+                    "WALL", scheme.getWallMaterial(),
+                    "CEILING", scheme.getCeilingMaterial(),
+                    "CABINET", scheme.getCabinetMaterial()
+            );
+
+            for (String type : mainTypes) {
+                Object mat = roomTypeMaterials.get(type);
+                BigDecimal area = roomTypeAreas.get(type);
+                if (mat != null && area != null && area.compareTo(BigDecimal.ZERO) > 0) {
+                    HouseMaterialSummaryResponse.MaterialDetail detail = new HouseMaterialSummaryResponse.MaterialDetail();
+                    detail.setType(type);
+                    detail.setDisplayName(String.valueOf(mat));
+                    detail.setArea(area);
+                    response.getMainMaterials().get(type).add(detail);
+                }
+            }
+        }
+
+        // 汇总辅材
+        List<AuxiliaryMaterial> auxiliaries = auxiliaryMaterialRepository.findAll();
+        for (AuxiliaryMaterial aux : auxiliaries) {
+            BigDecimal quantity = calculateAuxiliaryQuantity(aux, houseId); // 用你现有方法
+            HouseMaterialSummaryResponse.AuxiliaryMaterialItem item = new HouseMaterialSummaryResponse.AuxiliaryMaterialItem();
+            item.setName(aux.getName());
+            item.setCategory(aux.getCategory());
+            item.setUnit(aux.getUnit());
+            item.setQuantity(quantity);
+            item.setRemark(aux.getRemark());
+            response.getAuxiliaryMaterials().add(item);
+        }
+
+        return response;
+    }
+
+
+    /**
+     * 生成报价账单
+     */
+    private Bill generateQuotationBill(Long houseId, Long userId, BigDecimal totalCost) {
+        CreateBillRequest request = new CreateBillRequest();
+        request.setBizType(Bill.BizType.CONSTRUCTION);  // 报价业务类型
+        request.setBizId(houseId);                   // 房屋ID
+        request.setAmount(totalCost);                // 总金额
+        request.setDepositAmount(BigDecimal.ZERO);   // 报价账单无定金
+        request.setRemark("房屋装修报价账单");
+
+        return billService.createBill(request, userId); // 用户既是支付方也是收款方（临时）
+    }
+
+    /**
+     * 构建主材明细
+     */
+    private HouseQuotationResponse.MaterialDetail buildMaterialDetail(String type, BigDecimal area) {
+        if (type == null || area == null) {
+            return null;
+        }
+
+        List<Material> materialList = materialRepository.findByType(type);
+        if (materialList.isEmpty()) return null;
+
+        Material material = materialList.get(0);
+
+        HouseQuotationResponse.MaterialDetail detail = new HouseQuotationResponse.MaterialDetail();
+        detail.setType(type);
+        detail.setDisplayName(material.getDisplayName());
+        detail.setArea(area);
+        detail.setUnitPrice(material.getUnitPrice());
+        detail.setCost(material.getUnitPrice().multiply(area));
+
+        return detail;
+    }
+
+    /**
+     * 计算辅材用量（可根据业务逻辑调整）
+     */
+    private BigDecimal calculateAuxiliaryQuantity(AuxiliaryMaterial auxiliary, Long houseId) {
+        BigDecimal baseArea = houseService.getHouseWithCalculatedFields(houseId).getArea();
+        int roomCount = houseRoomService.getConfirmedRoomsByHouseId(houseId).size();
+
+        return switch (auxiliary.getCategory().toUpperCase()) {
+            case "CEMENT" -> baseArea.multiply(new BigDecimal("0.1"));        // 水泥按面积比例
+            case "PIPE" -> new BigDecimal(roomCount * 2);                     // 每房间2个管道点
+            case "WIRE" -> baseArea.multiply(new BigDecimal("1.2"));          // 电线按面积比例
+            case "FIXING_MATERIALS" -> new BigDecimal(roomCount * 5);         // 每房间固定材料5个
+            case "ETC" -> calculateEtcMaterialQuantity(auxiliary, baseArea, roomCount);
+            default -> BigDecimal.ONE;
+        };
+    }
+
+    /**
+     * ETC 类别辅材用量
+     */
+    private BigDecimal calculateEtcMaterialQuantity(AuxiliaryMaterial auxiliary, BigDecimal baseArea, int roomCount) {
+        String name = auxiliary.getName().toLowerCase();
+
+        return switch (name) {
+            case "螺丝", "螺钉", "膨胀螺栓" -> baseArea.multiply(new BigDecimal("10"));   // 每平米10个
+            case "胶水", "玻璃胶", "密封胶" -> baseArea.multiply(new BigDecimal("0.1")); // 每平米0.1kg
+            case "保温棉", "隔音棉" -> baseArea.multiply(new BigDecimal("0.5"));         // 每平米0.5单位
+            case "砂纸", "打磨纸" -> new BigDecimal(roomCount * 3);                     // 每房间3张
+            case "保护膜", "防尘膜" -> baseArea.multiply(new BigDecimal("0.8"));         // 按面积比例
+            default -> BigDecimal.ONE;
+        };
+    }
+}

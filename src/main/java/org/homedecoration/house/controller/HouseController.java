@@ -6,6 +6,7 @@ import org.homedecoration.common.response.ApiResponse;
 import org.homedecoration.common.utils.JwtUtil;
 import org.homedecoration.house.dto.request.CreateHouseRequest;
 import org.homedecoration.house.dto.request.UpdateHouseRequest;
+import org.homedecoration.house.dto.response.HouseMaterialSummaryResponse;
 import org.homedecoration.house.dto.response.HouseQuotationResponse;
 import org.homedecoration.house.dto.response.HouseResponse;
 import org.homedecoration.house.service.HouseService;
@@ -27,6 +28,7 @@ public class HouseController {
         this.jwtUtil = jwtUtil;
         this.houseQuotationService = houseQuotationService;
     }
+
 
     // 新增房屋
     @PostMapping("/create-house")
