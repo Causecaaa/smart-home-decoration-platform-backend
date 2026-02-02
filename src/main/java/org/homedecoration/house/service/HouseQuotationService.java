@@ -1,10 +1,12 @@
 package org.homedecoration.house.service;
 
 import lombok.RequiredArgsConstructor;
+import org.hibernate.validator.internal.util.stereotypes.Lazy;
 import org.homedecoration.bill.dto.request.CreateBillRequest;
 import org.homedecoration.bill.entity.Bill;
 import org.homedecoration.bill.repository.BillRepository;
 import org.homedecoration.bill.service.BillService;
+import org.homedecoration.construction.stage.service.StageService;
 import org.homedecoration.furniture.SchemeRoomMaterial.entity.SchemeRoomMaterial;
 import org.homedecoration.furniture.SchemeRoomMaterial.service.SchemeRoomMaterialService;
 import org.homedecoration.house.dto.response.HouseMaterialSummaryResponse;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -170,50 +173,74 @@ public class HouseQuotationService {
 
         // 汇总主材
         for (HouseRoom room : rooms) {
+            // 获取房间材料方案并进行空值检查
             SchemeRoomMaterial scheme = schemeRoomMaterialService.getByRoomId(room.getId());
+            if (scheme == null) {
+                continue; // 跳过当前房间
+            }
 
-            Map<String, BigDecimal> roomTypeAreas = Map.of(
-                    "FLOOR", scheme.getFloorArea(),
-                    "WALL", scheme.getWallArea(),
-                    "CEILING", scheme.getCeilingArea(),
-                    "CABINET", scheme.getCabinetArea()
-            );
+            Map<String, BigDecimal> roomTypeAreas = new HashMap<>();
+            roomTypeAreas.put("FLOOR", scheme.getFloorArea() != null ? scheme.getFloorArea() : BigDecimal.ZERO);
+            roomTypeAreas.put("WALL", scheme.getWallArea() != null ? scheme.getWallArea() : BigDecimal.ZERO);
+            roomTypeAreas.put("CEILING", scheme.getCeilingArea() != null ? scheme.getCeilingArea() : BigDecimal.ZERO);
+            roomTypeAreas.put("CABINET", scheme.getCabinetArea() != null ? scheme.getCabinetArea() : BigDecimal.ZERO);
 
-            Map<String, Object> roomTypeMaterials = Map.of(
-                    "FLOOR", scheme.getFloorMaterial(),
-                    "WALL", scheme.getWallMaterial(),
-                    "CEILING", scheme.getCeilingMaterial(),
-                    "CABINET", scheme.getCabinetMaterial()
-            );
+            Map<String, Object> roomTypeMaterials = new HashMap<>();
+            roomTypeMaterials.put("FLOOR", scheme.getFloorMaterial());
+            roomTypeMaterials.put("WALL", scheme.getWallMaterial());
+            roomTypeMaterials.put("CEILING", scheme.getCeilingMaterial());
+            roomTypeMaterials.put("CABINET", scheme.getCabinetMaterial());
 
             for (String type : mainTypes) {
                 Object mat = roomTypeMaterials.get(type);
                 BigDecimal area = roomTypeAreas.get(type);
-                if (mat != null && area != null && area.compareTo(BigDecimal.ZERO) > 0) {
-                    HouseMaterialSummaryResponse.MaterialDetail detail = new HouseMaterialSummaryResponse.MaterialDetail();
-                    detail.setType(type);
-                    detail.setDisplayName(String.valueOf(mat));
-                    detail.setArea(area);
-                    response.getMainMaterials().get(type).add(detail);
+
+                // 添加安全检查 - 检查材料类型是否存在且面积大于0
+                if (mat == null || area == null || area.compareTo(BigDecimal.ZERO) <= 0) {
+                    continue; // 跳过当前材料类型
                 }
+
+                String materialType = String.valueOf(mat);
+                List<Material> materialList = materialRepository.findByType(materialType);
+
+                HouseMaterialSummaryResponse.MaterialDetail detail = new HouseMaterialSummaryResponse.MaterialDetail();
+                detail.setType(type);
+
+                if (!materialList.isEmpty()) {
+                    detail.setDisplayName(materialList.get(0).getDisplayName());
+                } else {
+                    detail.setDisplayName(materialType);
+                }
+
+                detail.setArea(area);
+                response.getMainMaterials().get(type).add(detail);
             }
         }
 
         // 汇总辅材
         List<AuxiliaryMaterial> auxiliaries = auxiliaryMaterialRepository.findAll();
+
         for (AuxiliaryMaterial aux : auxiliaries) {
-            BigDecimal quantity = calculateAuxiliaryQuantity(aux, houseId); // 用你现有方法
-            HouseMaterialSummaryResponse.AuxiliaryMaterialItem item = new HouseMaterialSummaryResponse.AuxiliaryMaterialItem();
-            item.setName(aux.getName());
-            item.setCategory(aux.getCategory());
-            item.setUnit(aux.getUnit());
-            item.setQuantity(quantity);
-            item.setRemark(aux.getRemark());
-            response.getAuxiliaryMaterials().add(item);
+            try {
+                BigDecimal quantity = calculateAuxiliaryQuantity(aux, houseId);
+
+                HouseMaterialSummaryResponse.AuxiliaryMaterialItem item = new HouseMaterialSummaryResponse.AuxiliaryMaterialItem();
+                item.setName(aux.getName());
+                item.setCategory(aux.getCategory());
+                item.setUnit(aux.getUnit());
+                item.setQuantity(quantity);
+                item.setRemark(aux.getRemark());
+                response.getAuxiliaryMaterials().add(item);
+            } catch (Exception e) {
+                // 记录错误但不影响整体流程
+            }
         }
 
         return response;
     }
+
+
+
 
 
     /**

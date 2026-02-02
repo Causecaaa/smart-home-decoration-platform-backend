@@ -378,11 +378,13 @@ FOREIGN KEY (`house_id`) REFERENCES `house`(`house_id`)
 ON DELETE CASCADE,
 
 `stage_name` VARCHAR(50) NOT NULL COMMENT '阶段名称',
-`order_no` INT NOT NULL COMMENT '阶段顺序（从小到大）',
+`status` VARCHAR(20) NOT NULL COMMENT '状态',
 `main_worker_type` VARCHAR(20) NOT NULL COMMENT '主工种',
 `required_count` INT NOT NULL DEFAULT 1 COMMENT '该阶段需要人数',
 `estimated_day` INT COMMENT '预计完成时间（天）',
 
+`start_at` DATETIME COMMENT '实际开始时间',
+`end_at` DATETIME COMMENT '实际完成时间',
 
 `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
 `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'

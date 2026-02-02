@@ -1,9 +1,12 @@
 package org.homedecoration.bill.service;
 
+import lombok.RequiredArgsConstructor;
+import org.hibernate.validator.internal.util.stereotypes.Lazy;
 import org.homedecoration.bill.dto.request.CreateBillRequest;
 import org.homedecoration.bill.entity.Bill;
 import org.homedecoration.bill.repository.BillRepository;
 import org.homedecoration.common.exception.BusinessException;
+import org.homedecoration.construction.stage.service.StageService;
 import org.homedecoration.furniture.furnitureScheme.repository.FurnitureSchemeRepository;
 import org.homedecoration.layout.repository.HouseLayoutRepository;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -15,24 +18,15 @@ import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
 @Service
+@RequiredArgsConstructor
 public class BillService {
 
     private final BillRepository billRepository;
     private final HouseLayoutRepository houseLayoutRepository;
     private final FurnitureSchemeRepository furnitureSchemeRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final StageService stageService;
 
-    public BillService(
-            BillRepository billRepository,
-            HouseLayoutRepository houseLayoutRepository,
-            FurnitureSchemeRepository furnitureSchemeRepository,
-            RedisTemplate<String, Object> redisTemplate
-    ) {
-        this.billRepository = billRepository;
-        this.houseLayoutRepository = houseLayoutRepository;
-        this.furnitureSchemeRepository = furnitureSchemeRepository;
-        this.redisTemplate = redisTemplate;
-    }
 
     public Bill getBill(Bill.BizType bizType, Long bizId) {
         return billRepository.findByBizTypeAndBizId(bizType, bizId)
@@ -207,7 +201,6 @@ public class BillService {
 
     @Transactional
     public Bill payFull(Long payerId, Long billId) {
-        // 1️⃣ 分布式锁
         String lockKey = "bill:pay:lock:" + billId;
         Boolean locked = redisTemplate.opsForValue()
                 .setIfAbsent(lockKey, "1", 10, TimeUnit.SECONDS);
@@ -217,33 +210,34 @@ public class BillService {
         }
 
         try {
-            // 2️⃣ 公共校验
             Bill bill = getAndCheckBill(billId, payerId);
 
-            // 3️⃣ 状态检查：只能从 UNPAID 直接支付全额
             if (bill.getPayStatus() != Bill.PayStatus.UNPAID) {
                 throw new BusinessException("当前账单状态不允许直接支付全额");
             }
 
-            // 4️⃣ 更新状态
             bill.setPayStatus(Bill.PayStatus.PAID);
             bill.setPaidAt(Instant.now());
 
             Bill saved = billRepository.save(bill);
 
-            // 5️⃣ 缓存支付状态
             redisTemplate.opsForValue().set(
                     "bill:pay:status:" + billId,
                     saved.getPayStatus().name(),
                     1, TimeUnit.HOURS
             );
 
+            if (bill.getBizType() == Bill.BizType.CONSTRUCTION) {
+                stageService.createStagesAsync(bill.getBizId());
+            }
+
+
             return saved;
 
         } finally {
-            // 6️⃣ 释放锁
             redisTemplate.delete(lockKey);
         }
     }
+
 
 }

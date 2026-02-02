@@ -29,6 +29,14 @@ public class HouseController {
         this.houseQuotationService = houseQuotationService;
     }
 
+    @GetMapping("/quotation-materials/{houseId}")
+    public ApiResponse<HouseMaterialSummaryResponse> getHouseMaterials(
+            @PathVariable Long houseId) {
+
+        HouseMaterialSummaryResponse materials = houseQuotationService.calculateHouseMaterials(houseId);
+        return ApiResponse.success(materials);
+    }
+
 
     // 新增房屋
     @PostMapping("/create-house")
