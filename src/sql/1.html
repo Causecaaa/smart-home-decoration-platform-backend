@@ -395,7 +395,9 @@ CREATE TABLE `stage_assignment` (
 `id` BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '派工ID',
 `stage_id` BIGINT NOT NULL COMMENT '装修阶段ID',
 `worker_id` BIGINT NOT NULL COMMENT '工人ID',
-`assigned_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '派工时间',
+`expected_start_at` DATETIME NOT NULL COMMENT '预计开始时间',
+`expected_end_at` DATETIME COMMENT '预计结束时间',
+
 `start_at` DATETIME COMMENT '实际开始时间',
 `end_at` DATETIME COMMENT '实际完成时间',
 `status` ENUM('PENDING','IN_PROGRESS','COMPLETED','CANCELLED') NOT NULL DEFAULT 'PENDING' COMMENT '阶段状态',

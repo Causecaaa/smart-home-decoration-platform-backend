@@ -1,16 +1,16 @@
-package org.homedecoration.construction.stage.service;
+package org.homedecoration.stage.stage.service;
 
 import lombok.RequiredArgsConstructor;
-import org.homedecoration.construction.stage.dto.response.HouseStageResponse;
-import org.homedecoration.construction.stage.entity.Stage;
-import org.homedecoration.construction.stage.repository.StageRepository;
+import org.homedecoration.stage.stage.dto.response.HouseStageResponse;
+import org.homedecoration.stage.stage.entity.Stage;
+import org.homedecoration.stage.stage.repository.StageRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.homedecoration.construction.stage.service.StageService.STATUS_MAP;
-import static org.homedecoration.construction.stage.service.StageService.WORKER_TYPE_MAP;
+import static org.homedecoration.stage.stage.service.StageService.STATUS_MAP;
+import static org.homedecoration.stage.stage.service.StageService.WORKER_TYPE_MAP;
 
 @Service
 @RequiredArgsConstructor

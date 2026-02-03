@@ -1,14 +1,15 @@
-package org.homedecoration.construction.stage.dto.response;
+package org.homedecoration.stage.stage.dto.response;
 
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
-public class StageDetailResponse {
+public class HouseStageResponse {
+
+    private List<StageInfo> stages = new ArrayList<>();
 
     @Data
     public static class StageInfo {
@@ -19,12 +20,10 @@ public class StageDetailResponse {
         private Integer requiredCount; // 所需人数
         private Integer estimatedDay;  // 预计天数
 
+        private LocalDateTime expectedStartAt;
+        private LocalDateTime expectedEndAt;
+
         private LocalDateTime start_at;
         private LocalDateTime end_at;
-
-        private List<HouseStageMaterialsResponse.MaterialInfo> mainMaterials = new ArrayList<>();
-        private List<HouseStageMaterialsResponse.AuxMaterialInfo> auxiliaryMaterials = new ArrayList<>();
-
     }
-
 }

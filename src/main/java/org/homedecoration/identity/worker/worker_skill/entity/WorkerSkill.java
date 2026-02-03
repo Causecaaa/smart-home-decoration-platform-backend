@@ -1,4 +1,4 @@
-package org.homedecoration.identity.worker.worker_skill.repository;
+package org.homedecoration.identity.worker.worker_skill.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

@@ -2,6 +2,7 @@ package org.homedecoration.identity.worker.service;
 
 import jakarta.validation.Valid;
 import org.homedecoration.identity.user.entity.User;
+import org.homedecoration.identity.user.repository.UserRepository;
 import org.homedecoration.identity.user.service.UserService;
 import org.homedecoration.identity.worker.dto.request.CreateWorkerRequest;
 import org.homedecoration.identity.worker.dto.request.UpdateWorkerProfileRequest;
@@ -20,7 +21,7 @@ public class WorkerService {
     private final WorkerRepository workerRepository;
     private final UserService userService;
 
-    public WorkerService(WorkerRepository workerRepository, UserService userService) {
+    public WorkerService(WorkerRepository workerRepository, UserService userService, UserRepository userRepository) {
         this.workerRepository = workerRepository;
         this.userService = userService;
     }

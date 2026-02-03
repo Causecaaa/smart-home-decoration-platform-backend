@@ -1,4 +1,4 @@
-package org.homedecoration.construction.stage.entity;
+package org.homedecoration.stage.stage.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;

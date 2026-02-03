@@ -1,11 +1,11 @@
-package org.homedecoration.construction.stage.service;
+package org.homedecoration.stage.stage.service;
 
 import lombok.RequiredArgsConstructor;
-import org.homedecoration.construction.stage.dto.response.HouseStageMaterialsResponse;
-import org.homedecoration.construction.stage.dto.response.HouseStageResponse;
-import org.homedecoration.construction.stage.dto.response.StageDetailResponse;
-import org.homedecoration.construction.stage.entity.Stage;
-import org.homedecoration.construction.stage.repository.StageRepository;
+import org.homedecoration.stage.stage.dto.response.HouseStageMaterialsResponse;
+import org.homedecoration.stage.stage.dto.response.HouseStageResponse;
+import org.homedecoration.stage.stage.dto.response.StageDetailResponse;
+import org.homedecoration.stage.stage.entity.Stage;
+import org.homedecoration.stage.stage.repository.StageRepository;
 import org.homedecoration.furniture.SchemeRoomMaterial.entity.SchemeRoomMaterial;
 import org.homedecoration.furniture.SchemeRoomMaterial.service.SchemeRoomMaterialService;
 import org.homedecoration.house.dto.response.HouseMaterialSummaryResponse;
@@ -13,7 +13,7 @@ import org.homedecoration.house.entity.House;
 import org.homedecoration.house.service.HouseService;
 import org.homedecoration.houseRoom.entity.HouseRoom;
 import org.homedecoration.houseRoom.service.HouseRoomService;
-import org.homedecoration.identity.worker.worker_skill.repository.WorkerSkill;
+import org.homedecoration.identity.worker.worker_skill.entity.WorkerSkill;
 import org.homedecoration.material.auxiliary.AuxiliaryMaterial;
 import org.homedecoration.material.auxiliary.AuxiliaryMaterialRepository;
 import org.homedecoration.material.material.Material;
@@ -463,7 +463,7 @@ public class StageService {
     );
 
 
-    public StageDetailResponse.StageInfo getStageDetail(Long houseId, Long userId, Integer order) {
+    public StageDetailResponse getStageDetail(Long houseId, Long userId, Integer order) {
         // 1️⃣ 校验权限
         House house = houseService.getHouseById(houseId);
         if (!house.getUser().getId().equals(userId)) {
@@ -482,6 +482,7 @@ public class StageService {
         info.setMainWorkerType(WORKER_TYPE_MAP.getOrDefault(stage.getMainWorkerType(), stage.getMainWorkerType()));
         info.setRequiredCount(stage.getRequiredCount());
         info.setEstimatedDay(stage.getEstimatedDay());
+        info.setExpectedStartAt(String.valueOf(stage.getExpectedStartAt()));
         info.setStart_at(stage.getStart_at());
         info.setEnd_at(stage.getEnd_at());
 
@@ -517,7 +518,10 @@ public class StageService {
             }
         });
 
-        return info;
+        StageDetailResponse response = new StageDetailResponse();
+        response.setStageInfo(info);
+
+        return response;
     }
 
     private Stage getStage(Long houseId, Integer order) {

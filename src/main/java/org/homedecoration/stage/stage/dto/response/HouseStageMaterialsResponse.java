@@ -1,4 +1,4 @@
-package org.homedecoration.construction.stage.dto.response;
+package org.homedecoration.stage.stage.dto.response;
 
 import lombok.Data;
 

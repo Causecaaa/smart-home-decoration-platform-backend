@@ -1,6 +1,6 @@
-package org.homedecoration.construction.stage.repository;
+package org.homedecoration.stage.stage.repository;
 
-import org.homedecoration.construction.stage.entity.Stage;
+import org.homedecoration.stage.stage.entity.Stage;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

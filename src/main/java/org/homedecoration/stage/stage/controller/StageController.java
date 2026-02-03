@@ -1,14 +1,14 @@
-package org.homedecoration.construction.stage.controller;
+package org.homedecoration.stage.stage.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.homedecoration.common.response.ApiResponse;
 import org.homedecoration.common.utils.JwtUtil;
-import org.homedecoration.construction.stage.dto.response.HouseStageMaterialsResponse;
-import org.homedecoration.construction.stage.dto.response.HouseStageResponse;
-import org.homedecoration.construction.stage.dto.response.StageDetailResponse;
-import org.homedecoration.construction.stage.service.GanttChartService;
-import org.homedecoration.construction.stage.service.StageService;
+import org.homedecoration.stage.stage.dto.response.HouseStageMaterialsResponse;
+import org.homedecoration.stage.stage.dto.response.HouseStageResponse;
+import org.homedecoration.stage.stage.dto.response.StageDetailResponse;
+import org.homedecoration.stage.stage.service.GanttChartService;
+import org.homedecoration.stage.stage.service.StageService;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -34,7 +34,7 @@ public class StageController {
 
 
     @GetMapping("/{houseId}/{order}")
-    public ApiResponse<StageDetailResponse.StageInfo> getStageDetail(
+    public ApiResponse<StageDetailResponse> getStageDetail(
             @PathVariable Long houseId,
             @PathVariable Integer order,
             HttpServletRequest request) {

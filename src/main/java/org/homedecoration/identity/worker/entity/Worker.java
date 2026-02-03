@@ -30,11 +30,14 @@ public class Worker {
     @Column(name = "work_status", nullable = false, length = 20)
     private WorkStatus workStatus = WorkStatus.IDLE;
 
+    @Column(name = "total_work_days")
+    private Integer totalWorkDays = 10; // 初始虚拟天数
+
     @Column(name = "internal_score", precision = 3, scale = 2)
-    private BigDecimal internalScore = BigDecimal.valueOf(5.0);
+    private BigDecimal internalScore = BigDecimal.valueOf(4.0);
 
     @Column(name = "rating", precision = 3, scale = 2)
-    private BigDecimal rating = BigDecimal.valueOf(5.0);
+    private BigDecimal rating = BigDecimal.valueOf(4.0);
 
 
     @Column(name = "order_count")
