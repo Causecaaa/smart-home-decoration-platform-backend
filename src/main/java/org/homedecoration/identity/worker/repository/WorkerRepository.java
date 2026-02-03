@@ -12,4 +12,6 @@ public interface WorkerRepository extends JpaRepository<Worker, Long> {
     // 按城市查询可用工人
     List<Worker> findByCityAndWorkStatusAndEnabled(String city, Worker.WorkStatus workStatus, Boolean enabled);
 
+    List<Worker> findByCity(String city);
+
 }
