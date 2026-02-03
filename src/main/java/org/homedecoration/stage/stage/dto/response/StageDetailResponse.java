@@ -2,6 +2,7 @@ package org.homedecoration.stage.stage.dto.response;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.List;
 @Data
 public class StageDetailResponse {
     private StageInfo stageInfo;
+    private WorkerResponse workerResponse;
 
 
     @Data
@@ -26,7 +28,22 @@ public class StageDetailResponse {
 
         private List<HouseStageMaterialsResponse.MaterialInfo> mainMaterials = new ArrayList<>();
         private List<HouseStageMaterialsResponse.AuxMaterialInfo> auxiliaryMaterials = new ArrayList<>();
+    }
 
+    @Data
+    public static class WorkerResponse {
+        private List<WorkerInfo> workers = new ArrayList<>();
+    }
+
+    @Data
+    public static class WorkerInfo {
+        private Long workerId;           // 工人ID
+        private String realName;         // 真实姓名
+        private String avatarUrl;        // 用户头像
+        private String phone;
+        private String email;
+        private String skillLevel;       // 熟练度：JUNIOR / SKILLED / MASTER
+        private BigDecimal rating;           // 对外评分
     }
 
 }

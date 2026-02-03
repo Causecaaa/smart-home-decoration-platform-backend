@@ -2,6 +2,7 @@ package org.homedecoration.identity.worker.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.homedecoration.common.response.ApiResponse;
 import org.homedecoration.common.utils.JwtUtil;
 import org.homedecoration.identity.worker.dto.request.CreateWorkerRequest;
@@ -9,21 +10,40 @@ import org.homedecoration.identity.worker.dto.request.UpdateWorkerProfileRequest
 import org.homedecoration.identity.worker.dto.response.WorkerDetailResponse;
 import org.homedecoration.identity.worker.entity.Worker;
 import org.homedecoration.identity.worker.service.WorkerService;
+import org.homedecoration.identity.worker.worker_skill.entity.WorkerSkill;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
 @RequestMapping("/worker")
+@RequiredArgsConstructor
 public class WorkerController {
 
     private final WorkerService workerService;
     private final JwtUtil jwtUtil;
 
-    public WorkerController(WorkerService workerService, JwtUtil jwtUtil) {
-        this.workerService = workerService;
-        this.jwtUtil = jwtUtil;
+    @GetMapping("/available-workers")
+    public ApiResponse<List<Worker>> getAvailableWorkers(
+            @RequestParam WorkerSkill.WorkerType mainWorkerType,
+            @RequestParam Integer requiredCount,
+            @RequestParam String city,
+            @RequestParam String expectedStartAtStr,
+            @RequestParam String expectedEndAtStr) {
+
+        // 解析时间参数
+        LocalDateTime expectedStartAt = LocalDateTime.parse(expectedStartAtStr);
+        LocalDateTime expectedEndAt = LocalDateTime.parse(expectedEndAtStr);
+
+        // 调用服务方法
+        List<Worker> availableWorkers = workerService.findAvailableWorkers(
+                mainWorkerType, requiredCount, city, expectedStartAt, expectedEndAt);
+
+
+        return ApiResponse.success(availableWorkers);
     }
+
 
     @PostMapping("/apply")
     public ApiResponse<WorkerDetailResponse> applyWorker(

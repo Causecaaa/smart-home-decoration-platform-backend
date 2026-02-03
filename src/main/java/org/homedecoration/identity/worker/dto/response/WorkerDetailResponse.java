@@ -27,8 +27,6 @@ public class WorkerDetailResponse {
     private Integer orderCount;
     private Integer complaintCount;
     private Boolean enabled;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 
     public static WorkerDetailResponse toDTO(Worker worker, User user) {
         WorkerDetailResponse dto = new WorkerDetailResponse();
@@ -48,8 +46,6 @@ public class WorkerDetailResponse {
         dto.setOrderCount(worker.getOrderCount());
         dto.setComplaintCount(worker.getComplaintCount());
         dto.setEnabled(worker.getEnabled());
-        dto.setCreatedAt(worker.getCreatedAt());
-        dto.setUpdatedAt(worker.getUpdatedAt());
         return dto;
     }
 }

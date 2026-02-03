@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.homedecoration.identity.user.entity.User;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -16,6 +17,12 @@ public class Worker {
     @Id
     @Column(name = "user_id")
     private Long userId;
+
+    @OneToOne
+    @MapsId
+    @JoinColumn(name = "user_id")
+    private User user;
+
 
     @Column(name = "real_name", nullable = false, length = 50)
     private String realName;

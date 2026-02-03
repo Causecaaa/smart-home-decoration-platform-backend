@@ -4,6 +4,7 @@ import org.homedecoration.identity.worker.entity.Worker;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -14,4 +15,5 @@ public interface WorkerRepository extends JpaRepository<Worker, Long> {
 
     List<Worker> findByCity(String city);
 
+    List<Worker> findByCityAndIsPlatformWorkerAndWorkStatus(String city, boolean b, Worker.WorkStatus workStatus);
 }

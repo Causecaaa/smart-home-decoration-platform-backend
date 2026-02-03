@@ -1,6 +1,7 @@
 package org.homedecoration.identity.worker.service;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.homedecoration.identity.user.entity.User;
 import org.homedecoration.identity.user.repository.UserRepository;
 import org.homedecoration.identity.user.service.UserService;
@@ -9,22 +10,26 @@ import org.homedecoration.identity.worker.dto.request.UpdateWorkerProfileRequest
 import org.homedecoration.identity.worker.dto.response.WorkerDetailResponse;
 import org.homedecoration.identity.worker.entity.Worker;
 import org.homedecoration.identity.worker.repository.WorkerRepository;
+import org.homedecoration.identity.worker.worker_skill.entity.WorkerSkill;
+import org.homedecoration.identity.worker.worker_skill.repository.WorkerSkillRepository;
+import org.homedecoration.stage.assignment.entity.StageAssignment;
+import org.homedecoration.stage.assignment.repository.StageAssignmentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class WorkerService {
 
     private final WorkerRepository workerRepository;
     private final UserService userService;
-
-    public WorkerService(WorkerRepository workerRepository, UserService userService, UserRepository userRepository) {
-        this.workerRepository = workerRepository;
-        this.userService = userService;
-    }
+    private final StageAssignmentRepository stageAssignmentRepository;
+    private final WorkerSkillRepository workerSkillRepository;
 
     public WorkerDetailResponse apply(Long userId, @Valid CreateWorkerRequest request) {
         if (workerRepository.existsById(userId)) {
@@ -98,4 +103,54 @@ public class WorkerService {
                 .map(worker -> WorkerDetailResponse.toDTO(worker, userService.getById(worker.getUserId())))
                 .toList();
     }
+
+    public List<Worker> findAvailableWorkers(
+            WorkerSkill.WorkerType mainWorkerType,
+            Integer requiredCount,
+            String city,
+            LocalDateTime expectedStartAt,
+            LocalDateTime expectedEndAt) {
+
+        // 1️⃣ 查询符合城市、平台工人且空闲的工人
+        List<Worker> platformWorkers = workerRepository
+                .findByCityAndIsPlatformWorkerAndWorkStatus(city, true, Worker.WorkStatus.IDLE);
+
+        // 2️⃣ 根据 worker_skill 过滤符合工种的工人
+        List<Long> workerIdsWithSkill = workerSkillRepository
+                .findByWorkerType(mainWorkerType)
+                .stream()
+                .map(WorkerSkill::getWorkerId)
+                .toList();
+
+        List<Worker> candidates = platformWorkers.stream()
+                .filter(w -> workerIdsWithSkill.contains(w.getUserId()))
+                .sorted(Comparator.comparing(Worker::getRating).reversed()) // 按 rating 排序
+                .toList();
+
+        // 3️⃣ 过滤掉时间冲突的工人
+        List<Worker> availableWorkers = candidates.stream()
+                .filter(worker -> {
+                    List<StageAssignment> assignments = stageAssignmentRepository
+                            .findByWorkerIdAndStatusIn(
+                                    worker.getUserId(),
+                                    List.of(StageAssignment.AssignmentStatus.PENDING, StageAssignment.AssignmentStatus.IN_PROGRESS)
+                            );
+                    // 如果 assignments 中没有与目标时间段冲突的记录，则可用
+                    return assignments.stream().noneMatch(a ->
+                            a.getExpectedStartAt().isBefore(expectedEndAt) &&
+                                    a.getExpectedEndAt().isAfter(expectedStartAt)
+                    );
+                })
+                .limit(requiredCount) // 取前 requiredCount 个
+                .toList();
+
+        if (availableWorkers.size() < requiredCount) {
+            throw new RuntimeException("可用工人不足");
+        }
+
+        return availableWorkers;
+    }
+
+
+
 }

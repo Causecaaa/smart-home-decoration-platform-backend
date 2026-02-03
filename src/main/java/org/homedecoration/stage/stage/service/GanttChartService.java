@@ -1,6 +1,9 @@
 package org.homedecoration.stage.stage.service;
 
 import lombok.RequiredArgsConstructor;
+import org.homedecoration.stage.assignment.entity.StageAssignment;
+import org.homedecoration.stage.assignment.repository.StageAssignmentRepository;
+import org.homedecoration.stage.assignment.service.StageAssignmentService;
 import org.homedecoration.stage.stage.dto.response.HouseStageResponse;
 import org.homedecoration.stage.stage.entity.Stage;
 import org.homedecoration.stage.stage.repository.StageRepository;
@@ -17,6 +20,8 @@ import static org.homedecoration.stage.stage.service.StageService.WORKER_TYPE_MA
 public class GanttChartService {
 
     private final StageRepository stageRepository;
+    private final StageAssignmentService stageAssignmentService;
+
 
     /**
      * 获取房屋阶段甘特图数据（带 expectedEndAt）
@@ -31,7 +36,7 @@ public class GanttChartService {
             info.setOrder(stage.getOrder());
             info.setStageName(stage.getStageName());
             info.setStatus(STATUS_MAP.getOrDefault(stage.getStatus(), stage.getStatus().toString()));
-            info.setMainWorkerType(WORKER_TYPE_MAP.getOrDefault(stage.getMainWorkerType(), stage.getMainWorkerType()));
+            info.setMainWorkerType(WORKER_TYPE_MAP.getOrDefault(stage.getMainWorkerType(), String.valueOf(stage.getMainWorkerType())));
             info.setRequiredCount(stage.getRequiredCount());
             info.setEstimatedDay(stage.getEstimatedDay());
             info.setStart_at(stage.getStart_at());
@@ -59,6 +64,26 @@ public class GanttChartService {
         }
 
         return response;
+    }
+
+
+    public Stage getCurrentStage(Long houseId) {
+        List<Stage> stages = stageRepository.findByHouseIdOrderByOrderAsc(houseId);
+
+        // 遍历阶段，找到第一个未被验收的阶段
+        for (Stage stage : stages) {
+            if (stage.getStatus() != Stage.StageStatus.ACCEPTED) {
+                return stage; // 直接返回第一个未验收的阶段
+            }
+        }
+
+        // 如果所有阶段都被验收，则返回最后一个阶段（可选）
+        if (!stages.isEmpty()) {
+            return stages.get(stages.size() - 1);
+        }
+
+        // 如果没有阶段，抛出异常或返回 null（根据业务需求决定）
+        throw new RuntimeException("未找到有效的阶段信息");
     }
 
 
@@ -102,6 +127,14 @@ public class GanttChartService {
             }
             // 更新 prevEnd
             prevEnd = nextStage.getExpectedStartAt().plusDays(nextStage.getEstimatedDay());
+        }
+
+        Stage current = getCurrentStage(houseId);
+        boolean isCurrentStage = current.getOrder().equals(order);
+
+        if (isCurrentStage) {
+            // 只触发通知/调用 assignmentService 去更新预约时间
+            stageAssignmentService.updateAssignmentsForStage(current.getId(), userInputStart);
         }
 
         // ---------- 4️⃣ 批量保存 ----------

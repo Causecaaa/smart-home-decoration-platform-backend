@@ -1,6 +1,13 @@
 package org.homedecoration.stage.stage.service;
 
 import lombok.RequiredArgsConstructor;
+import org.homedecoration.identity.user.entity.User;
+import org.homedecoration.identity.user.service.UserService;
+import org.homedecoration.identity.worker.entity.Worker;
+import org.homedecoration.identity.worker.service.WorkerService;
+import org.homedecoration.identity.worker.worker_skill.repository.WorkerSkillRepository;
+import org.homedecoration.stage.assignment.entity.StageAssignment;
+import org.homedecoration.stage.assignment.repository.StageAssignmentRepository;
 import org.homedecoration.stage.stage.dto.response.HouseStageMaterialsResponse;
 import org.homedecoration.stage.stage.dto.response.HouseStageResponse;
 import org.homedecoration.stage.stage.dto.response.StageDetailResponse;
@@ -51,6 +58,15 @@ public class StageService {
     private final MaterialRepository materialRepository;
     private final AuxiliaryMaterialRepository auxiliaryMaterialRepository;
     private final SchemeRoomMaterialService schemeRoomMaterialService;
+    private final WorkerSkillRepository workerSkillRepository;
+    private final StageAssignmentRepository stageAssignmentRepository;
+
+
+    public Stage getStage(Long stageId) {
+        return stageRepository.findById(stageId)
+                .orElseThrow(() -> new RuntimeException("阶段不存在"));
+    }
+
 
     /**
      * 获取按阶段分配的房屋材料清单
@@ -232,7 +248,7 @@ public class StageService {
             stage.setOrder(entry.getKey());
             stage.setStageName(entry.getValue());
             stage.setStatus(Stage.StageStatus.PENDING);
-            stage.setMainWorkerType(mapStageToWorkerType(entry.getValue()).name());
+            stage.setMainWorkerType(mapStageToWorkerType(entry.getValue()));
 
             // 计算人数和预计天数
             int requiredCount = calculateRequiredCount(entry.getValue(), houseArea, roomCount);
@@ -430,8 +446,7 @@ public class StageService {
             info.setOrder(stage.getOrder());
             info.setStageName(stage.getStageName());
             info.setStatus(STATUS_MAP.getOrDefault(stage.getStatus(), stage.getStatus().toString()));;
-            info.setMainWorkerType(WORKER_TYPE_MAP.getOrDefault(stage.getMainWorkerType(), stage.getMainWorkerType()));
-
+            info.setMainWorkerType(WORKER_TYPE_MAP.getOrDefault(stage.getMainWorkerType(), "未知工种"));
             info.setRequiredCount(stage.getRequiredCount());
             info.setEstimatedDay(stage.getEstimatedDay());
 
@@ -452,14 +467,14 @@ public class StageService {
     );
 
 
-    public static final Map<String, String> WORKER_TYPE_MAP = Map.of(
-            "DEMOLITION", "拆改工",
-            "ELECTRICAL", "水电工",
-            "PLASTER", "泥工",
-            "CARPENTRY", "木工",
-            "PAINTING", "油漆工",
-            "TILING", "瓦工",
-            "INSTALLATION", "收尾工"
+    public static final Map<WorkerSkill.WorkerType, String> WORKER_TYPE_MAP = Map.of(
+            WorkerSkill.WorkerType.DEMOLITION, "拆改工",
+            WorkerSkill.WorkerType.ELECTRICAL, "水电工",
+            WorkerSkill.WorkerType.PLASTER, "泥工",
+            WorkerSkill.WorkerType.CARPENTRY, "木工",
+            WorkerSkill.WorkerType.PAINTING, "油漆工",
+            WorkerSkill.WorkerType.TILING, "瓦工",
+            WorkerSkill.WorkerType.INSTALLATION, "收尾工"
     );
 
 
@@ -479,8 +494,7 @@ public class StageService {
         info.setOrder(stage.getOrder());
         info.setStageName(stage.getStageName());
         info.setStatus(STATUS_MAP.getOrDefault(stage.getStatus(), stage.getStatus().toString()));
-        info.setMainWorkerType(WORKER_TYPE_MAP.getOrDefault(stage.getMainWorkerType(), stage.getMainWorkerType()));
-        info.setRequiredCount(stage.getRequiredCount());
+        info.setMainWorkerType(WORKER_TYPE_MAP.getOrDefault(stage.getMainWorkerType(), "未知工种"));info.setRequiredCount(stage.getRequiredCount());
         info.setEstimatedDay(stage.getEstimatedDay());
         info.setExpectedStartAt(String.valueOf(stage.getExpectedStartAt()));
         info.setStart_at(stage.getStart_at());
@@ -521,37 +535,41 @@ public class StageService {
         StageDetailResponse response = new StageDetailResponse();
         response.setStageInfo(info);
 
+        StageDetailResponse.WorkerResponse workerResp = new StageDetailResponse.WorkerResponse();
+
+        List<StageAssignment> assignments = stageAssignmentRepository.findByStageId(stage.getId());
+
+        for (StageAssignment assignment : assignments) {
+            Worker worker = assignment.getWorker();
+
+            StageDetailResponse.WorkerInfo wi = new StageDetailResponse.WorkerInfo();
+            wi.setWorkerId(worker.getUserId());
+            wi.setRealName(worker.getRealName());
+            wi.setAvatarUrl(worker.getUser().getAvatarUrl());
+            wi.setPhone(worker.getUser().getPhone());
+            wi.setEmail(worker.getUser().getEmail());
+
+            // 技能信息（如果一个工人可能有多技能，按主工种取）
+            Optional<WorkerSkill> skillOpt = workerSkillRepository.findByWorkerIdAndWorkerType(
+                    worker.getUserId(), stage.getMainWorkerType()
+            );
+
+            wi.setSkillLevel(
+                    skillOpt.map(s -> s.getLevel().name())
+                            .orElse("SKILLED") // 默认
+            );
+
+
+            wi.setRating(worker.getRating());
+
+            workerResp.getWorkers().add(wi);
+        }
+
+        response.setWorkerResponse(workerResp);
+
+
         return response;
     }
 
-    private Stage getStage(Long houseId, Integer order) {
-        return (Stage) stageRepository.findByHouseIdAndOrder(houseId, order)
-                .orElseThrow(() -> new RuntimeException("阶段不存在"));
-    }
-
-    public void updateExpectedStartAt(Long houseId, Integer order, Long userId, String expectedStartAtStr) {
-        House house = houseService.getHouseById(houseId);
-        if (!house.getUser().getId().equals(userId)) {
-            throw new RuntimeException("无权限操作");
-        }
-
-        LocalDateTime expectedStartAt;
-        try {
-            expectedStartAt = LocalDateTime.parse(expectedStartAtStr + "T00:00:00"); // 简单转 yyyy-MM-dd -> LocalDateTime
-        } catch (Exception e) {
-            throw new RuntimeException("日期格式错误，应为 yyyy-MM-dd");
-        }
-
-        // 校验必须至少提前两天
-        LocalDateTime minAllowed = LocalDateTime.now().plusDays(1).withHour(0).withMinute(0).withSecond(0);
-        if (expectedStartAt.isBefore(minAllowed)) {
-            throw new RuntimeException("预计开始时间必须至少提前两天");
-        }
-
-        Stage stage = getStage(houseId, order);
-
-        stage.setExpectedStartAt(expectedStartAt);
-        stageRepository.save(stage);
-    }
 
 }

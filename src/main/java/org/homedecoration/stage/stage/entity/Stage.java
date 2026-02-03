@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.homedecoration.identity.worker.worker_skill.entity.WorkerSkill;
 
 import java.time.LocalDateTime;
 
@@ -36,8 +37,10 @@ public class Stage {
     @Column(name = "status", nullable = false)
     private StageStatus status;  // 改成枚举类型
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "main_worker_type", nullable = false, length = 20)
-    private String mainWorkerType;
+    private WorkerSkill.WorkerType mainWorkerType;
+
 
     @Column(name = "required_count", nullable = false)
     private Integer requiredCount;
