@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -149,6 +150,44 @@ public class WorkerService {
         }
 
         return availableWorkers;
+    }
+
+    public Worker findReplacementWorker(
+            WorkerSkill.WorkerType mainWorkerType,
+            String city,
+            LocalDateTime expectedStartAt,
+            LocalDateTime expectedEndAt,
+            Set<Long> excludedWorkerIds) {
+
+        List<Worker> platformWorkers = workerRepository
+                .findByCityAndIsPlatformWorkerAndWorkStatus(city, true, Worker.WorkStatus.IDLE);
+
+        List<Long> workerIdsWithSkill = workerSkillRepository
+                .findByWorkerType(mainWorkerType)
+                .stream()
+                .map(WorkerSkill::getWorkerId)
+                .toList();
+
+        List<Worker> candidates = platformWorkers.stream()
+                .filter(w -> workerIdsWithSkill.contains(w.getUserId()))
+                .filter(w -> excludedWorkerIds == null || !excludedWorkerIds.contains(w.getUserId()))
+                .sorted(Comparator.comparing(Worker::getRating).reversed())
+                .toList();
+
+        return candidates.stream()
+                .filter(worker -> {
+                    List<StageAssignment> assignments = stageAssignmentRepository
+                            .findByWorkerIdAndStatusIn(
+                                    worker.getUserId(),
+                                    List.of(StageAssignment.AssignmentStatus.PENDING, StageAssignment.AssignmentStatus.IN_PROGRESS)
+                            );
+                    return assignments.stream().noneMatch(a ->
+                            a.getExpectedStartAt().isBefore(expectedEndAt) &&
+                                    a.getExpectedEndAt().isAfter(expectedStartAt)
+                    );
+                })
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("可用替补工人不足"));
     }
 
 

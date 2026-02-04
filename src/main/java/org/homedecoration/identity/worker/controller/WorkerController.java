@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.homedecoration.common.response.ApiResponse;
 import org.homedecoration.common.utils.JwtUtil;
 import org.homedecoration.identity.worker.dto.request.CreateWorkerRequest;
+import org.homedecoration.identity.worker.dto.request.LeaveRequest;
 import org.homedecoration.identity.worker.dto.request.UpdateWorkerProfileRequest;
 import org.homedecoration.identity.worker.dto.response.WorkerDetailResponse;
 import org.homedecoration.identity.worker.entity.Worker;
@@ -70,11 +71,24 @@ public class WorkerController {
         return ApiResponse.success(workerService.updateProfile(userId, body));
     }
 
-    @GetMapping("/future-assignments")
-    public ApiResponse<List<StageAssignmentResponse>> listFutureAssignments(HttpServletRequest request) {
+    @GetMapping("/assignments")
+    public ApiResponse<List<StageAssignmentResponse>> listAssignments(HttpServletRequest request) {
         Long userId = jwtUtil.getUserId(request);
         List<StageAssignmentResponse> responses = stageAssignmentService
-                .listFutureAssignmentsByWorkerId(userId, LocalDateTime.now())
+                .listAssignmentsByWorkerId(userId)
+                .stream()
+                .map(StageAssignmentResponse::toDTO)
+                .toList();
+        return ApiResponse.success(responses);
+    }
+
+    @PostMapping("/leave")
+    public ApiResponse<List<StageAssignmentResponse>> requestLeave(
+            HttpServletRequest request,
+            @Valid @RequestBody LeaveRequest body) {
+        Long userId = jwtUtil.getUserId(request);
+        List<StageAssignmentResponse> responses = stageAssignmentService
+                .applyLeaveForDate(userId, body.getLeaveDate())
                 .stream()
                 .map(StageAssignmentResponse::toDTO)
                 .toList();

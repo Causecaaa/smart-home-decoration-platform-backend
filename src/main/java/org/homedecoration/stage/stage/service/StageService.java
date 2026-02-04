@@ -332,14 +332,28 @@ public class StageService {
         };
     }
 
-    /**
-     * 计算房屋材料汇总
-     */
     public HouseMaterialSummaryResponse calculateHouseMaterials(Long houseId) {
+        String cacheKey = "house:materials:summary:" + houseId;
+        long start = System.currentTimeMillis();
+
+        HouseMaterialSummaryResponse cache =
+                (HouseMaterialSummaryResponse) redisTemplate.opsForValue().get(cacheKey);
+
+        if (cache != null) {
+            System.out.println("[HouseMaterials] HIT cache, cost="
+                    + (System.currentTimeMillis() - start) + "ms");
+            return cache;
+        }
+
+
         HouseMaterialSummaryResponse response = new HouseMaterialSummaryResponse();
         response.setHouseId(houseId);
 
         List<HouseRoom> rooms = houseRoomService.getConfirmedRoomsByHouseId(houseId);
+
+        if (rooms == null) {
+            return response;
+        }
 
         // 初始化主材类别
         String[] mainTypes = {"FLOOR", "WALL", "CEILING", "CABINET"};
@@ -349,8 +363,12 @@ public class StageService {
 
         // 汇总主材
         for (HouseRoom room : rooms) {
+
             SchemeRoomMaterial scheme = schemeRoomMaterialService.getByRoomId(room.getId());
-            if (scheme == null) continue;
+            if (scheme == null) {
+                System.out.println("⚠️ roomId=" + room.getId() + " 未找到 scheme");
+                continue;
+            }
 
             Map<String, BigDecimal> roomTypeAreas = Map.of(
                     "FLOOR", scheme.getFloorArea() != null ? scheme.getFloorArea() : BigDecimal.ZERO,
@@ -359,46 +377,76 @@ public class StageService {
                     "CABINET", scheme.getCabinetArea() != null ? scheme.getCabinetArea() : BigDecimal.ZERO
             );
 
-            Map<String, Object> roomTypeMaterials = Map.of(
-                    "FLOOR", scheme.getFloorMaterial(),
-                    "WALL", scheme.getWallMaterial(),
-                    "CEILING", scheme.getCeilingMaterial(),
-                    "CABINET", scheme.getCabinetMaterial()
-            );
+            Map<String, Object> roomTypeMaterials = new HashMap<>();
+            roomTypeMaterials.put("FLOOR", scheme.getFloorMaterial());
+            roomTypeMaterials.put("WALL", scheme.getWallMaterial());
+            roomTypeMaterials.put("CEILING", scheme.getCeilingMaterial());
+            roomTypeMaterials.put("CABINET", scheme.getCabinetMaterial());
+
 
             for (String type : mainTypes) {
+
                 Object mat = roomTypeMaterials.get(type);
                 BigDecimal area = roomTypeAreas.get(type);
-                if (mat == null || area == null || area.compareTo(BigDecimal.ZERO) <= 0) continue;
+
+                if (mat == null) {
+                    continue;
+                }
+                if (area == null || area.compareTo(BigDecimal.ZERO) <= 0) {
+                    continue;
+                }
 
                 String materialType = String.valueOf(mat);
+
                 List<Material> materialList = materialRepository.findByType(materialType);
 
-                HouseMaterialSummaryResponse.MaterialDetail detail = new HouseMaterialSummaryResponse.MaterialDetail();
+                HouseMaterialSummaryResponse.MaterialDetail detail =
+                        new HouseMaterialSummaryResponse.MaterialDetail();
                 detail.setType(type);
-                detail.setDisplayName(!materialList.isEmpty() ? materialList.get(0).getDisplayName() : materialType);
+                detail.setDisplayName(
+                        materialList != null && !materialList.isEmpty()
+                                ? materialList.get(0).getDisplayName()
+                                : materialType
+                );
                 detail.setArea(area);
+
                 response.getMainMaterials().get(type).add(detail);
+
             }
         }
 
-        // 汇总辅材
+
         List<AuxiliaryMaterial> auxiliaries = auxiliaryMaterialRepository.findAll();
-        for (AuxiliaryMaterial aux : auxiliaries) {
-            try {
-                BigDecimal quantity = calculateAuxiliaryQuantity(aux, houseId);
-                HouseMaterialSummaryResponse.AuxiliaryMaterialItem item = new HouseMaterialSummaryResponse.AuxiliaryMaterialItem();
-                item.setName(aux.getName());
-                item.setCategory(aux.getCategory());
-                item.setUnit(aux.getUnit());
-                item.setQuantity(quantity);
-                item.setRemark(aux.getRemark());
-                response.getAuxiliaryMaterials().add(item);
-            } catch (Exception ignored) {}
+
+        if (auxiliaries != null) {
+            for (AuxiliaryMaterial aux : auxiliaries) {
+                try {
+
+                    BigDecimal quantity = calculateAuxiliaryQuantity(aux, houseId);
+
+                    HouseMaterialSummaryResponse.AuxiliaryMaterialItem item =
+                            new HouseMaterialSummaryResponse.AuxiliaryMaterialItem();
+                    item.setName(aux.getName());
+                    item.setCategory(aux.getCategory());
+                    item.setUnit(aux.getUnit());
+                    item.setQuantity(quantity);
+                    item.setRemark(aux.getRemark());
+
+                    response.getAuxiliaryMaterials().add(item);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
+
+        redisTemplate.opsForValue().set(cacheKey, response, 10, TimeUnit.MINUTES);
+
+        System.out.println("[HouseMaterials] MISS cache, cost="
+                + (System.currentTimeMillis() - start) + "ms");
 
         return response;
     }
+
 
     /**
      * 计算辅材用量

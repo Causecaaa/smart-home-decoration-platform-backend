@@ -19,4 +19,12 @@ public interface StageAssignmentRepository extends JpaRepository<StageAssignment
             java.time.LocalDateTime expectedStartAt,
             List<StageAssignment.AssignmentStatus> statuses
     );
+
+    List<StageAssignment> findByWorkerIdAndStatusInAndExpectedStartAtBeforeAndExpectedEndAtAfter(
+            Long workerId,
+            List<StageAssignment.AssignmentStatus> statuses,
+            java.time.LocalDateTime expectedStartAt,
+            java.time.LocalDateTime expectedEndAt
+    );
+
 }

@@ -15,8 +15,6 @@ public class StageAssignmentResponse {
     private LocalDateTime startAt;
     private LocalDateTime endAt;
     private StageAssignment.AssignmentStatus status;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 
     public static StageAssignmentResponse toDTO(StageAssignment assignment) {
         StageAssignmentResponse dto = new StageAssignmentResponse();
@@ -28,8 +26,6 @@ public class StageAssignmentResponse {
         dto.setStartAt(assignment.getStartAt());
         dto.setEndAt(assignment.getEndAt());
         dto.setStatus(assignment.getStatus());
-        dto.setCreatedAt(assignment.getCreatedAt());
-        dto.setUpdatedAt(assignment.getUpdatedAt());
         return dto;
     }
 }
