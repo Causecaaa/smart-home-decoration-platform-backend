@@ -59,6 +59,14 @@ public class StageAssignmentService {
         return stageAssignmentRepository.findByWorkerId(workerId);
     }
 
+    public List<StageAssignment> listFutureAssignmentsByWorkerId(Long workerId, LocalDateTime now) {
+        return stageAssignmentRepository.findByWorkerIdAndExpectedStartAtAfterAndStatusInOrderByExpectedStartAtAsc(
+                workerId,
+                now,
+                List.of(StageAssignment.AssignmentStatus.PENDING, StageAssignment.AssignmentStatus.IN_PROGRESS)
+        );
+    }
+
     public StageAssignment updateAssignment(Long assignmentId, UpdateStageAssignmentRequest request) {
         StageAssignment assignment = getAssignment(assignmentId);
 
