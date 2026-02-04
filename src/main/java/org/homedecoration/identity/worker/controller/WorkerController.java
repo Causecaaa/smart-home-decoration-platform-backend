@@ -9,6 +9,7 @@ import org.homedecoration.identity.worker.dto.request.CreateWorkerRequest;
 import org.homedecoration.identity.worker.dto.request.LeaveRequest;
 import org.homedecoration.identity.worker.dto.request.UpdateWorkerProfileRequest;
 import org.homedecoration.identity.worker.dto.response.WorkerDetailResponse;
+import org.homedecoration.identity.worker.dto.response.WorkerStageCalendarResponse;
 import org.homedecoration.identity.worker.entity.Worker;
 import org.homedecoration.identity.worker.service.WorkerService;
 import org.homedecoration.identity.worker.worker_skill.entity.WorkerSkill;
@@ -17,6 +18,7 @@ import org.homedecoration.stage.assignment.service.StageAssignmentService;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.List;
 
 @RestController
@@ -80,6 +82,15 @@ public class WorkerController {
                 .map(StageAssignmentResponse::toDTO)
                 .toList();
         return ApiResponse.success(responses);
+    }
+
+    @GetMapping("/calendar")
+    public ApiResponse<WorkerStageCalendarResponse> getStageCalendar(
+            HttpServletRequest request,
+            @RequestParam String month) {
+        Long userId = jwtUtil.getUserId(request);
+        YearMonth yearMonth = YearMonth.parse(month);
+        return ApiResponse.success(stageAssignmentService.getWorkerStageCalendar(userId, yearMonth));
     }
 
     @PostMapping("/leave")

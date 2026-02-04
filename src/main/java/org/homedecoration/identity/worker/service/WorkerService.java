@@ -5,9 +5,12 @@ import lombok.RequiredArgsConstructor;
 import org.homedecoration.identity.user.entity.User;
 import org.homedecoration.identity.user.repository.UserRepository;
 import org.homedecoration.identity.user.service.UserService;
+import org.homedecoration.identity.worker.LeaveRecord.LeaveRecord;
+import org.homedecoration.identity.worker.LeaveRecord.LeaveRecordRepository;
 import org.homedecoration.identity.worker.dto.request.CreateWorkerRequest;
 import org.homedecoration.identity.worker.dto.request.UpdateWorkerProfileRequest;
 import org.homedecoration.identity.worker.dto.response.WorkerDetailResponse;
+import org.homedecoration.identity.worker.dto.response.WorkerSimpleResponse;
 import org.homedecoration.identity.worker.entity.Worker;
 import org.homedecoration.identity.worker.repository.WorkerRepository;
 import org.homedecoration.identity.worker.worker_skill.entity.WorkerSkill;
@@ -31,6 +34,7 @@ public class WorkerService {
     private final UserService userService;
     private final StageAssignmentRepository stageAssignmentRepository;
     private final WorkerSkillRepository workerSkillRepository;
+    private final LeaveRecordRepository leaveRecordRepository;
 
     public WorkerDetailResponse apply(Long userId, @Valid CreateWorkerRequest request) {
         if (workerRepository.existsById(userId)) {
@@ -62,6 +66,22 @@ public class WorkerService {
                 .orElseThrow(() -> new IllegalArgumentException("工人不存在"));
         User user = userService.getById(workerId);
         return WorkerDetailResponse.toDTO(worker, user);
+    }
+
+    public WorkerSimpleResponse getSimpleResponse(Long workerId) {
+        Worker worker = workerRepository.findById(workerId)
+                .orElseThrow(() -> new IllegalArgumentException("工人不存在"));
+        User user = userService.getById(workerId);
+        WorkerSimpleResponse response = new WorkerSimpleResponse();
+        response.setUserId(worker.getUserId());
+        if (user != null) {
+            response.setUsername(user.getUsername());
+            response.setAvatarUrl(user.getAvatarUrl());
+            response.setPhone(user.getPhone());
+            response.setEmail(user.getEmail());
+        }
+        response.setRealName(worker.getRealName());
+        return response;
     }
 
     public WorkerDetailResponse updateProfile(Long userId, @Valid UpdateWorkerProfileRequest body) {
@@ -128,22 +148,41 @@ public class WorkerService {
                 .sorted(Comparator.comparing(Worker::getRating).reversed()) // 按 rating 排序
                 .toList();
 
-        // 3️⃣ 过滤掉时间冲突的工人
         List<Worker> availableWorkers = candidates.stream()
                 .filter(worker -> {
+                    // 1️⃣ 检查工作任务冲突（WORK 类型 assignment）
                     List<StageAssignment> assignments = stageAssignmentRepository
                             .findByWorkerIdAndStatusIn(
                                     worker.getUserId(),
                                     List.of(StageAssignment.AssignmentStatus.PENDING, StageAssignment.AssignmentStatus.IN_PROGRESS)
                             );
-                    // 如果 assignments 中没有与目标时间段冲突的记录，则可用
-                    return assignments.stream().noneMatch(a ->
+
+                    List<StageAssignment> workAssignments = assignments.stream()
+                            .filter(a -> a.getType() == StageAssignment.AssignmentType.WORK)
+                            .toList();
+
+                    boolean hasWorkConflict = workAssignments.stream().anyMatch(a ->
                             a.getExpectedStartAt().isBefore(expectedEndAt) &&
                                     a.getExpectedEndAt().isAfter(expectedStartAt)
                     );
+
+                    if (hasWorkConflict) return false;
+
+                    // 2️⃣ 检查请假冲突（LeaveRecord）
+                    List<LeaveRecord> leaves = leaveRecordRepository
+                            .findByWorkerId(worker.getUserId());
+
+                    boolean hasLeaveConflict = leaves.stream().anyMatch(l ->
+                            !l.getLeaveDate().isBefore(expectedStartAt.toLocalDate()) &&
+                                    !l.getLeaveDate().isAfter(expectedEndAt.toLocalDate())
+                    );
+
+                    return !hasLeaveConflict;
                 })
-                .limit(requiredCount) // 取前 requiredCount 个
+                .limit(requiredCount)
                 .toList();
+
+
 
         if (availableWorkers.size() < requiredCount) {
             throw new RuntimeException("可用工人不足");
@@ -152,43 +191,6 @@ public class WorkerService {
         return availableWorkers;
     }
 
-    public Worker findReplacementWorker(
-            WorkerSkill.WorkerType mainWorkerType,
-            String city,
-            LocalDateTime expectedStartAt,
-            LocalDateTime expectedEndAt,
-            Set<Long> excludedWorkerIds) {
-
-        List<Worker> platformWorkers = workerRepository
-                .findByCityAndIsPlatformWorkerAndWorkStatus(city, true, Worker.WorkStatus.IDLE);
-
-        List<Long> workerIdsWithSkill = workerSkillRepository
-                .findByWorkerType(mainWorkerType)
-                .stream()
-                .map(WorkerSkill::getWorkerId)
-                .toList();
-
-        List<Worker> candidates = platformWorkers.stream()
-                .filter(w -> workerIdsWithSkill.contains(w.getUserId()))
-                .filter(w -> excludedWorkerIds == null || !excludedWorkerIds.contains(w.getUserId()))
-                .sorted(Comparator.comparing(Worker::getRating).reversed())
-                .toList();
-
-        return candidates.stream()
-                .filter(worker -> {
-                    List<StageAssignment> assignments = stageAssignmentRepository
-                            .findByWorkerIdAndStatusIn(
-                                    worker.getUserId(),
-                                    List.of(StageAssignment.AssignmentStatus.PENDING, StageAssignment.AssignmentStatus.IN_PROGRESS)
-                            );
-                    return assignments.stream().noneMatch(a ->
-                            a.getExpectedStartAt().isBefore(expectedEndAt) &&
-                                    a.getExpectedEndAt().isAfter(expectedStartAt)
-                    );
-                })
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("可用替补工人不足"));
-    }
 
 
 

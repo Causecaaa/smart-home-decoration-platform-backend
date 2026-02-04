@@ -4,12 +4,17 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.homedecoration.house.entity.House;
 import org.homedecoration.house.service.HouseService;
+import org.homedecoration.identity.worker.LeaveRecord.LeaveRecord;
+import org.homedecoration.identity.worker.LeaveRecord.LeaveRecordRepository;
+import org.homedecoration.identity.worker.dto.response.WorkerSimpleResponse;
 import org.homedecoration.identity.worker.entity.Worker;
 import org.homedecoration.identity.worker.service.WorkerService;
+import org.homedecoration.identity.worker.dto.response.WorkerStageCalendarResponse;
 import org.homedecoration.stage.assignment.dto.request.CreateStageAssignmentRequest;
 import org.homedecoration.stage.assignment.dto.request.UpdateStageAssignmentRequest;
 import org.homedecoration.stage.assignment.entity.StageAssignment;
 import org.homedecoration.stage.assignment.repository.StageAssignmentRepository;
+import org.homedecoration.stage.stage.dto.response.HouseStageMaterialsResponse;
 import org.homedecoration.stage.stage.entity.Stage;
 import org.homedecoration.stage.stage.service.StageService;
 import org.springframework.http.HttpStatus;
@@ -18,9 +23,11 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashSet;
+import java.time.LocalTime;
+import java.time.YearMonth;
 import java.util.List;
-import java.util.Set;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +36,7 @@ public class StageAssignmentService {
     private final StageService stageService;
     private final WorkerService workerService;
     private final HouseService houseService;
+    private final LeaveRecordRepository leaveRecordRepository;
 
     public StageAssignment createAssignment(CreateStageAssignmentRequest request) {
         if (request.getStageId() == null || request.getWorkerId() == null) {
@@ -69,6 +77,27 @@ public class StageAssignmentService {
         );
     }
 
+    public WorkerStageCalendarResponse getWorkerStageCalendar(Long workerId, YearMonth yearMonth) {
+        LocalDateTime monthStart = yearMonth.atDay(1).atStartOfDay();
+        LocalDateTime monthEnd = yearMonth.plusMonths(1).atDay(1).atStartOfDay();
+        List<StageAssignment> assignments = stageAssignmentRepository
+                .findByWorkerIdAndStatusInAndExpectedStartAtBeforeAndExpectedEndAtAfter(
+                        workerId,
+                        List.of(StageAssignment.AssignmentStatus.PENDING,
+                                StageAssignment.AssignmentStatus.IN_PROGRESS,
+                                StageAssignment.AssignmentStatus.COMPLETED),
+                        monthEnd,
+                        monthStart
+                );
+
+        WorkerStageCalendarResponse response = new WorkerStageCalendarResponse();
+        List<WorkerStageCalendarResponse.StageAssignmentItem> items = assignments.stream()
+                .map(assignment -> toWorkerStageAssignmentItem(workerId, assignment))
+                .toList();
+        response.setAssignments(items);
+        return response;
+    }
+
     public StageAssignment updateAssignment(Long assignmentId, UpdateStageAssignmentRequest request) {
         StageAssignment assignment = getAssignment(assignmentId);
 
@@ -95,6 +124,59 @@ public class StageAssignmentService {
         }
 
         return stageAssignmentRepository.save(assignment);
+    }
+
+    private WorkerStageCalendarResponse.StageAssignmentItem toWorkerStageAssignmentItem(
+            Long workerId,
+            StageAssignment assignment) {
+        WorkerStageCalendarResponse.StageAssignmentItem item = new WorkerStageCalendarResponse.StageAssignmentItem();
+        item.setAssignmentId(assignment.getId());
+        if (assignment.getExpectedStartAt() != null) {
+            item.setExpected_Start_at(assignment.getExpectedStartAt().toLocalDate());
+        }
+        if (assignment.getExpectedEndAt() != null) {
+            item.setExpected_End_at(assignment.getExpectedEndAt().toLocalDate().minusDays(1));
+        }
+
+        item.setStatus(assignment.getStatus());
+
+        Stage stage = stageService.getStage(assignment.getStageId());
+        item.setStageId(stage.getId());
+        item.setStageName(stage.getStageName());
+
+        House house = houseService.getHouseById(stage.getHouseId());
+        item.setHouseId(house.getId());
+        item.setCity(house.getCity());
+        item.setCommunityName(house.getCommunityName());
+        item.setBuildingNo(house.getBuildingNo());
+        item.setUnitNo(house.getUnitNo());
+        item.setRoomNo(house.getRoomNo());
+        item.setArea(house.getArea());
+
+        List<WorkerSimpleResponse> coworkers = stageAssignmentRepository.findByStageId(stage.getId())
+                .stream()
+                .filter(stageAssignment -> stageAssignment.getStatus() != StageAssignment.AssignmentStatus.CANCELLED)
+                .map(StageAssignment::getWorkerId)
+                .filter(Objects::nonNull)
+                .filter(otherWorkerId -> !otherWorkerId.equals(workerId))
+                .distinct()
+                .map(workerService::getSimpleResponse)
+                .toList();
+        item.setCoworkers(coworkers);
+
+        HouseStageMaterialsResponse materials = stageService.getHouseMaterialsByStage(
+                house.getId(),
+                house.getUser().getId()
+        );
+        materials.getStages().stream()
+                .filter(stageMaterial -> stageMaterial.getStage().equals(stage.getOrder()))
+                .findFirst()
+                .ifPresent(stageMaterial -> {
+                    item.setMainMaterials(stageMaterial.getMainMaterials().stream().collect(Collectors.toList()));
+                    item.setAuxiliaryMaterials(stageMaterial.getAuxiliaryMaterials().stream().collect(Collectors.toList()));
+                });
+
+        return item;
     }
 
     public void deleteAssignment(Long assignmentId) {
@@ -145,117 +227,128 @@ public class StageAssignmentService {
         }
     }
 
-    private Worker findReplacement(Stage stage,
-                                   House house,
-                                   StageAssignment assignment) {
-
-        List<StageAssignment> stageAssignments =
-                stageAssignmentRepository.findByStageId(stage.getId());
-
-        Set<Long> excludedWorkers = new HashSet<>();
-        for (StageAssignment sa : stageAssignments) {
-            excludedWorkers.add(sa.getWorkerId());
-        }
-
-        Worker replacement = workerService.findReplacementWorker(
-                stage.getMainWorkerType(),
-                house.getCity(),
-                assignment.getExpectedStartAt(),
-                assignment.getExpectedEndAt(),
-                excludedWorkers
-        );
-
-        if (replacement == null) {
-            throw new RuntimeException("找不到可替换工人");
-        }
-
-        return replacement;
-    }
 
     @Transactional
     public List<StageAssignment> applyLeaveForDate(Long workerId, LocalDate leaveDate) {
 
-        LocalDateTime dayStart = leaveDate.atStartOfDay();
-        LocalDateTime dayEnd   = dayStart.plusDays(1);
+        LocalDateTime leaveStart = leaveDate.atStartOfDay();
+        LocalDateTime leaveEnd = leaveDate.atTime(LocalTime.MAX); // 当天结束
 
-        // 1️⃣ 找到命中当天的 assignment
+        // 1️⃣ 查找当天命中的 assignment（最多一个）
         List<StageAssignment> assignments =
-                stageAssignmentRepository
-                        .findByWorkerIdAndStatusInAndExpectedStartAtBeforeAndExpectedEndAtAfter(
-                                workerId,
-                                List.of(StageAssignment.AssignmentStatus.PENDING,
-                                        StageAssignment.AssignmentStatus.IN_PROGRESS),
-                                dayEnd,
-                                dayStart
-                        );
+                stageAssignmentRepository.findByWorkerIdAndStatusInAndExpectedStartAtBeforeAndExpectedEndAtAfter(
+                        workerId,
+                        List.of(StageAssignment.AssignmentStatus.PENDING, StageAssignment.AssignmentStatus.IN_PROGRESS),
+                        leaveEnd,
+                        leaveStart
+                );
 
+        // 没有 assignment → 直接创建请假占位
         if (assignments.isEmpty()) {
-            // 没活也要占位，防止被排新活（可选）
-            createLeaveAssignment(workerId, null, leaveDate);
-            return null;
+            createLeaveAssignment(workerId, leaveDate);
+            return listAssignmentsByWorkerId(workerId);
         }
 
-        for (StageAssignment assignment : assignments) {
+        StageAssignment assignment = assignments.get(0);
+        Stage stage = stageService.getStage(assignment.getStageId());
+        House house = houseService.getHouseById(stage.getHouseId());
 
-            Stage stage = stageService.getStage(assignment.getStageId());
-            House house = houseService.getHouseById(stage.getHouseId());
+        LocalDate assignmentStart = assignment.getExpectedStartAt().toLocalDate();
+        LocalDate assignmentEnd = assignment.getExpectedEndAt().toLocalDate();
 
-            LocalDate start = assignment.getExpectedStartAt().toLocalDate();
-            LocalDate end   = assignment.getExpectedEndAt().toLocalDate();
 
-            // ========= 情况一：还没开始，直接整体换人 =========
-            if (leaveDate.isBefore(start)) {
+        // ========= 情况一：请假在 assignment 开始前，整体换人 =========
+        if (assignment.getStatus().equals(StageAssignment.AssignmentStatus.PENDING)) {
+            System.out.println("情况一：请假在 assignment 开始前，整体换人");
+            System.out.println("情况一：请假在 assignment 开始前，整体换人");
+            System.out.println("情况一：请假在 assignment 开始前，整体换人");
+            System.out.println("情况一：请假在 assignment 开始前，整体换人");System.out.println("情况一：请假在 assignment 开始前，整体换人");
+            System.out.println("情况一：请假在 assignment 开始前，整体换人");
+            System.out.println("情况一：请假在 assignment 开始前，整体换人");
+            System.out.println("情况一：请假在 assignment 开始前，整体换人");
+            System.out.println("情况一：请假在 assignment 开始前，整体换人");System.out.println("情况一：请假在 assignment 开始前，整体换人");
+            System.out.println("情况一：请假在 assignment 开始前，整体换人");
 
-                Worker replacement = findReplacement(stage, house, assignment);
-                assignment.setWorkerId(replacement.getUserId());
-                stageAssignmentRepository.save(assignment);
-                continue;
-            }
 
-            // ========= 情况二：已开始，必须拆 =========
-
-            // ① 截断原 assignment（张三）
-            assignment.setExpectedEndAt(leaveDate.minusDays(1).atStartOfDay());
-            assignment.setStatus(StageAssignment.AssignmentStatus.IN_PROGRESS);
+            Worker replacement = findReplacement(stage, house, leaveStart, leaveEnd);
+            assignment.setWorkerId(replacement.getUserId());
             stageAssignmentRepository.save(assignment);
+            createLeaveAssignment(workerId, leaveDate);
+            return listAssignmentsByWorkerId(workerId);
+        }
 
-            // ② 请假占位（张三）
-            createLeaveAssignment(workerId, stage.getId(), leaveDate);
+        // ========= 情况二：请假在 assignment 期间，拆分 =========
+        if(assignment.getStatus().equals(StageAssignment.AssignmentStatus.IN_PROGRESS)){
+            System.out.println("情况二：请假在 assignment 期间，拆分");
+            System.out.println("情况二：请假在 assignment 期间，拆分");
+            System.out.println("情况二：请假在 assignment 期间，拆分");
+            System.out.println("情况二：请假在 assignment 期间，拆分");
+            System.out.println("情况二：请假在 assignment 期间，拆分");
+            System.out.println("情况二：请假在 assignment 期间，拆分");
+            System.out.println("情况二：请假在 assignment 期间，拆分");
+            System.out.println("情况二：请假在 assignment 期间，拆分");
+            System.out.println("情况二：请假在 assignment 期间，拆分");
+            System.out.println("情况二：请假在 assignment 期间，拆分");
+            System.out.println("情况二：请假在 assignment 期间，拆分");
+            System.out.println("情况二：请假在 assignment 期间，拆分");
+            System.out.println("情况二：请假在 assignment 期间，拆分");
+            System.out.println("情况二：请假在 assignment 期间，拆分");
+            // ② 创建请假占位
+            createLeaveAssignment(workerId, leaveDate);
 
-            // ③ 剩余天数找人接（李四）
-            if (leaveDate.isBefore(end)) {
+            // ③ 剩余天数找替补
+            if (leaveDate.isBefore(assignmentEnd)) {
 
-                Worker replacement = findReplacement(stage, house, assignment);
+                LocalDateTime replacementStart = leaveDate.atStartOfDay();
+                LocalDateTime replacementEnd = assignment.getExpectedEndAt(); // 原 assignment 结束时间
+                assignment.setExpectedEndAt(leaveDate.atStartOfDay());
+                stageAssignmentRepository.save(assignment);
+
+                Worker replacement = findReplacement(stage, house, replacementStart, replacementEnd);
 
                 StageAssignment newAssignment = new StageAssignment();
                 newAssignment.setStageId(stage.getId());
                 newAssignment.setWorkerId(replacement.getUserId());
-                newAssignment.setExpectedStartAt(leaveDate.plusDays(1).atStartOfDay());
-                newAssignment.setExpectedEndAt(end.atStartOfDay());
+                newAssignment.setExpectedStartAt(replacementStart);
+                newAssignment.setExpectedEndAt(replacementEnd.minusDays(1));
                 newAssignment.setStatus(StageAssignment.AssignmentStatus.PENDING);
 
                 stageAssignmentRepository.save(newAssignment);
             }
         }
 
+
         return listAssignmentsByWorkerId(workerId);
     }
 
-    private void createLeaveAssignment(Long workerId,
-                                       Long stageId,
-                                       LocalDate leaveDate) {
+    /**
+     * 创建请假占位
+     */
+    private void createLeaveAssignment(Long workerId, LocalDate leaveDate) {
 
-        StageAssignment leave = new StageAssignment();
+        LeaveRecord record = new LeaveRecord();
+        record.setWorkerId(workerId);
+        record.setLeaveDate(leaveDate);
+        leaveRecordRepository.save(record);
+    }
 
-        leave.setWorkerId(workerId);
-        leave.setStageId(stageId); // 可以为 null：纯占位
-        leave.setExpectedStartAt(leaveDate.atStartOfDay());
-        leave.setExpectedEndAt(leaveDate.plusDays(1).atStartOfDay());
+    /**
+     * 找替补工人，严格按时间段找
+     */
+    private Worker findReplacement(Stage stage, House house, LocalDateTime expectedStartAt, LocalDateTime expectedEndAt) {
+        List<Worker> workers = workerService.findAvailableWorkers(
+                stage.getMainWorkerType(),
+                1,
+                house.getCity(),
+                expectedStartAt,
+                expectedEndAt
+        );
 
-        // 不参与施工，只占用时间
-        leave.setStatus(StageAssignment.AssignmentStatus.CANCELLED);
+        if (workers.isEmpty()) {
+            throw new RuntimeException("找不到可替换工人");
+        }
 
-        stageAssignmentRepository.save(leave);
+        return workers.get(0);
     }
 
 

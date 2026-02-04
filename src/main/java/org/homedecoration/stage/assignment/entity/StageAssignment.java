@@ -19,6 +19,10 @@ public class StageAssignment {
         COMPLETED,
         CANCELLED
     }
+    public enum AssignmentType{
+        WORK,
+        LEAVE
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -55,6 +59,10 @@ public class StageAssignment {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private AssignmentStatus status = AssignmentStatus.PENDING;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "assignment_type", nullable = false, length = 20)
+    private AssignmentType type = AssignmentType.WORK;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
