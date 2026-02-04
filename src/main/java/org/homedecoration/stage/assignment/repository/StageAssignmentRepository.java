@@ -13,4 +13,10 @@ public interface StageAssignmentRepository extends JpaRepository<StageAssignment
     List<StageAssignment> findByWorkerId(Long workerId);
 
     List<StageAssignment> findByWorkerIdAndStatusIn(Long userId, List<StageAssignment.AssignmentStatus> pending);
+
+    List<StageAssignment> findByWorkerIdAndExpectedStartAtAfterAndStatusInOrderByExpectedStartAtAsc(
+            Long workerId,
+            java.time.LocalDateTime expectedStartAt,
+            List<StageAssignment.AssignmentStatus> statuses
+    );
 }

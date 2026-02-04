@@ -11,6 +11,8 @@ import org.homedecoration.identity.worker.dto.response.WorkerDetailResponse;
 import org.homedecoration.identity.worker.entity.Worker;
 import org.homedecoration.identity.worker.service.WorkerService;
 import org.homedecoration.identity.worker.worker_skill.entity.WorkerSkill;
+import org.homedecoration.stage.assignment.dto.response.StageAssignmentResponse;
+import org.homedecoration.stage.assignment.service.StageAssignmentService;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -23,6 +25,7 @@ public class WorkerController {
 
     private final WorkerService workerService;
     private final JwtUtil jwtUtil;
+    private final StageAssignmentService stageAssignmentService;
 
     @GetMapping("/available-workers")
     public ApiResponse<List<Worker>> getAvailableWorkers(
@@ -65,6 +68,17 @@ public class WorkerController {
             @Valid @RequestBody UpdateWorkerProfileRequest body) {
         Long userId = jwtUtil.getUserId(request);
         return ApiResponse.success(workerService.updateProfile(userId, body));
+    }
+
+    @GetMapping("/future-assignments")
+    public ApiResponse<List<StageAssignmentResponse>> listFutureAssignments(HttpServletRequest request) {
+        Long userId = jwtUtil.getUserId(request);
+        List<StageAssignmentResponse> responses = stageAssignmentService
+                .listFutureAssignmentsByWorkerId(userId, LocalDateTime.now())
+                .stream()
+                .map(StageAssignmentResponse::toDTO)
+                .toList();
+        return ApiResponse.success(responses);
     }
 
     @GetMapping("/{workerId}/get")
