@@ -100,12 +100,17 @@ public class WorkerController {
             HttpServletRequest request,
             @Valid @RequestBody LeaveRequest body) {
         Long userId = jwtUtil.getUserId(request);
-        List<StageAssignmentResponse> responses = stageAssignmentService
-                .applyLeaveForDate(userId, body.getLeaveDate())
-                .stream()
-                .map(StageAssignmentResponse::toDTO)
-                .toList();
-        return ApiResponse.success(responses);
+        stageAssignmentService.applyLeaveForDate(userId, body);
+        return ApiResponse.success(null);
+    }
+
+    @PostMapping("/leave/cancel")
+    public ApiResponse<List<StageAssignmentResponse>> requestCancelLeave(
+            HttpServletRequest request,
+            @Valid @RequestBody LeaveRequest body) {
+        Long userId = jwtUtil.getUserId(request);
+        stageAssignmentService.cancelLeaveForDate(userId, body.getLeaveDate());
+        return ApiResponse.success(null);
     }
 
     @GetMapping("/{workerId}/get")

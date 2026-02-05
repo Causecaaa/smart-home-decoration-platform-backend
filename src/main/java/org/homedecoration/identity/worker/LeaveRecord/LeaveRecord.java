@@ -10,6 +10,11 @@ import java.time.LocalDateTime;
 @Data
 @Table(name = "leave_record")
 public class LeaveRecord {
+    public enum LeaveType {
+        SICK,
+        PERSONAL,
+        OTHER
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,6 +25,13 @@ public class LeaveRecord {
 
     @Column(name = "leave_date", nullable = false)
     private LocalDate leaveDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "leave_type", nullable = false)
+    private LeaveType leaveType;
+
+    @Column(name = "reason", nullable = false)
+    private String reason;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

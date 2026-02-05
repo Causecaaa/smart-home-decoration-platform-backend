@@ -1,11 +1,13 @@
 package org.homedecoration.stage.assignment.service;
 
 import jakarta.transaction.Transactional;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.homedecoration.house.entity.House;
 import org.homedecoration.house.service.HouseService;
 import org.homedecoration.identity.worker.LeaveRecord.LeaveRecord;
 import org.homedecoration.identity.worker.LeaveRecord.LeaveRecordRepository;
+import org.homedecoration.identity.worker.dto.request.LeaveRequest;
 import org.homedecoration.identity.worker.dto.response.WorkerSimpleResponse;
 import org.homedecoration.identity.worker.entity.Worker;
 import org.homedecoration.identity.worker.service.WorkerService;
@@ -26,7 +28,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -77,9 +78,13 @@ public class StageAssignmentService {
         );
     }
 
+    // 文件路径: D:\CODE\home_decoration_backend\src\main\java\org\homedecoration\stage\assignment\service\StageAssignmentService.java
+
     public WorkerStageCalendarResponse getWorkerStageCalendar(Long workerId, YearMonth yearMonth) {
         LocalDateTime monthStart = yearMonth.atDay(1).atStartOfDay();
         LocalDateTime monthEnd = yearMonth.plusMonths(1).atDay(1).atStartOfDay();
+
+        // 获取该工人在指定月份的任务分配
         List<StageAssignment> assignments = stageAssignmentRepository
                 .findByWorkerIdAndStatusInAndExpectedStartAtBeforeAndExpectedEndAtAfter(
                         workerId,
@@ -90,14 +95,30 @@ public class StageAssignmentService {
                         monthStart
                 );
 
-        WorkerStageCalendarResponse response = new WorkerStageCalendarResponse();
+        // 获取该工人在指定月份的请假记录
+        List<LeaveRecord> leaveRecords = leaveRecordRepository.findByWorkerId(workerId)
+                .stream()
+                .filter(record -> !record.getLeaveDate().isBefore(yearMonth.atDay(1)) &&
+                        !record.getLeaveDate().isAfter(yearMonth.atEndOfMonth()))
+                .toList();
 
+        // 提取请假日期
+        List<LocalDate> leaveDays = leaveRecords.stream()
+                .map(LeaveRecord::getLeaveDate)
+                .toList();
+
+        // 构建响应对象
+        WorkerStageCalendarResponse response = new WorkerStageCalendarResponse();
         List<WorkerStageCalendarResponse.StageAssignmentItem> items = assignments.stream()
                 .map(assignment -> toWorkerStageAssignmentItem(workerId, assignment))
                 .toList();
+
         response.setAssignments(items);
+        response.setLeaveDays(leaveDays); // 设置请假日期
+
         return response;
     }
+
 
     public StageAssignment updateAssignment(Long assignmentId, UpdateStageAssignmentRequest request) {
         StageAssignment assignment = getAssignment(assignmentId);
@@ -236,7 +257,8 @@ public class StageAssignmentService {
 
 
     @Transactional
-    public List<StageAssignment> applyLeaveForDate(Long workerId, LocalDate leaveDate) {
+    public void applyLeaveForDate(Long workerId, LeaveRequest request) {
+        LocalDate leaveDate = request.getLeaveDate();
 
         LocalDateTime leaveStart = leaveDate.atStartOfDay();
         LocalDateTime leaveEnd = leaveDate.atTime(LocalTime.MAX); // 当天结束
@@ -252,8 +274,8 @@ public class StageAssignmentService {
 
         // 没有 assignment → 直接创建请假占位
         if (assignments.isEmpty()) {
-            createLeaveAssignment(workerId, leaveDate);
-            return listAssignmentsByWorkerId(workerId);
+            createLeaveAssignment(workerId, request);
+            return ;
         }
 
         StageAssignment assignment = assignments.get(0);
@@ -270,15 +292,15 @@ public class StageAssignmentService {
             Worker replacement = findReplacement(stage, house, leaveStart, leaveEnd);
             assignment.setWorkerId(replacement.getUserId());
             stageAssignmentRepository.save(assignment);
-            createLeaveAssignment(workerId, leaveDate);
-            return listAssignmentsByWorkerId(workerId);
+            createLeaveAssignment(workerId, request);
+            return ;
         }
 
         // ========= 情况二：请假在 assignment 期间，拆分 =========
         if(assignment.getStatus().equals(StageAssignment.AssignmentStatus.IN_PROGRESS)){
 
             // ② 创建请假占位
-            createLeaveAssignment(workerId, leaveDate);
+            createLeaveAssignment(workerId, request);
 
             // ③ 剩余天数找替补
             if (leaveDate.isBefore(assignmentEnd)) {
@@ -294,6 +316,7 @@ public class StageAssignmentService {
                 newAssignment.setStageId(stage.getId());
                 newAssignment.setWorkerId(replacement.getUserId());
                 newAssignment.setExpectedStartAt(replacementStart);
+                newAssignment.setStartAt(replacementStart);
                 newAssignment.setExpectedEndAt(replacementEnd);
                 newAssignment.setStatus(StageAssignment.AssignmentStatus.IN_PROGRESS);
 
@@ -301,18 +324,18 @@ public class StageAssignmentService {
             }
         }
 
-
-        return listAssignmentsByWorkerId(workerId);
     }
 
     /**
      * 创建请假占位
      */
-    private void createLeaveAssignment(Long workerId, LocalDate leaveDate) {
+    private void createLeaveAssignment(Long workerId, LeaveRequest request) {
 
         LeaveRecord record = new LeaveRecord();
         record.setWorkerId(workerId);
-        record.setLeaveDate(leaveDate);
+        record.setLeaveDate(request.getLeaveDate());
+        record.setLeaveType(request.getLeaveType());
+        record.setReason(request.getReason());
         leaveRecordRepository.save(record);
     }
 
@@ -335,6 +358,8 @@ public class StageAssignmentService {
         return workers.get(0);
     }
 
-
-
+    @Transactional
+    public void cancelLeaveForDate(Long userId, @NotNull LocalDate leaveDate) {
+        leaveRecordRepository.deleteByWorkerIdAndLeaveDate(userId, leaveDate);
+    }
 }

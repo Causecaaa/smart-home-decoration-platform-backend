@@ -13,6 +13,7 @@ import java.util.List;
 public class WorkerStageCalendarResponse {
 
     private List<StageAssignmentItem> assignments;
+    private List<LocalDate> LeaveDays;
 
     @Data
     public static class StageAssignmentItem {

@@ -1,5 +1,6 @@
 package org.homedecoration.identity.worker.LeaveRecord;
 
+import jakarta.validation.constraints.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.homedecoration.identity.worker.LeaveRecord.LeaveRecord;
 import org.springframework.stereotype.Repository;
@@ -18,4 +19,6 @@ public interface LeaveRecordRepository extends JpaRepository<LeaveRecord, Long> 
 
     // 查某个城市、某日期请假的工人
     List<LeaveRecord> findByLeaveDate(LocalDate leaveDate);
+
+    void deleteByWorkerIdAndLeaveDate(Long userId, @NotNull LocalDate leaveDate);
 }

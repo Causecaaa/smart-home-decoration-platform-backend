@@ -655,7 +655,12 @@ public class StageService {
         List<StageAssignment> assignments = stageAssignmentRepository.findByStageId(stage.getId());
         for (StageAssignment assignment : assignments) {
             assignment.setStatus(StageAssignment.AssignmentStatus.COMPLETED);
-            assignment.setEndAt(LocalDateTime.now());
+            LocalDateTime now = LocalDateTime.now();
+            if(assignment.getExpectedEndAt().isBefore(now)){
+                assignment.setEndAt(assignment.getExpectedEndAt());
+            }else {
+                assignment.setEndAt(now);
+            }
         }
         stageAssignmentRepository.saveAll(assignments);
     }

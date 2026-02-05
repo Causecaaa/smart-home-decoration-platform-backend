@@ -32,19 +32,19 @@ public class GanttChartService {
      * 获取房屋阶段甘特图数据（带 expectedEndAt）
      */
     public HouseStageResponse getGanttData(Long houseId) {
-        String cacheKey = CACHE_PREFIX + "materials:" +  ":" + houseId;
-
-        long startTime = System.currentTimeMillis();
-
-
-        HouseStageResponse cache =
-                (HouseStageResponse) redisTemplate.opsForValue().get(cacheKey);
-
-        if (cache != null) {
-            System.out.println("[StageMaterials] HIT cache, cost="
-                    + (System.currentTimeMillis() - startTime) + "ms");
-            return cache;
-        }
+//        String cacheKey = CACHE_PREFIX + "materials:" +  ":" + houseId;
+//
+//        long startTime = System.currentTimeMillis();
+//
+//
+//        HouseStageResponse cache =
+//                (HouseStageResponse) redisTemplate.opsForValue().get(cacheKey);
+//
+//        if (cache != null) {
+//            System.out.println("[StageMaterials] HIT cache, cost="
+//                    + (System.currentTimeMillis() - startTime) + "ms");
+//            return cache;
+//        }
 
 
         List<Stage> stages = stageRepository.findByHouseIdOrderByOrderAsc(houseId);
@@ -82,11 +82,11 @@ public class GanttChartService {
 
             response.getStages().add(info);
         }
-
-        redisTemplate.opsForValue().set(cacheKey, response, 10, TimeUnit.MINUTES);
-
-        System.out.println("[HouseMaterials] MISS cache, cost="
-                + (System.currentTimeMillis() - startTime) + "ms");
+//
+//        redisTemplate.opsForValue().set(cacheKey, response, 10, TimeUnit.MINUTES);
+//
+//        System.out.println("[HouseMaterials] MISS cache, cost="
+//                + (System.currentTimeMillis() - startTime) + "ms");
 
 
         return response;
