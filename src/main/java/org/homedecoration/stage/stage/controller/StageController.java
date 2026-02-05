@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.homedecoration.common.response.ApiResponse;
 import org.homedecoration.common.utils.JwtUtil;
+import org.homedecoration.house.dto.response.HouseMaterialSummaryResponse;
 import org.homedecoration.stage.stage.dto.response.HouseStageMaterialsResponse;
 import org.homedecoration.stage.stage.dto.response.HouseStageResponse;
 import org.homedecoration.stage.stage.dto.response.StageDetailResponse;
@@ -21,6 +22,13 @@ public class StageController {
     private final StageService stageService;
     private final JwtUtil jwtUtil;
     private final GanttChartService ganttChartService;
+
+    @GetMapping("/{houseId}/getMaterials")
+    public ApiResponse<HouseMaterialSummaryResponse> getMaterials(
+            @PathVariable Long houseId
+    ){
+        return ApiResponse.success(stageService.calculateHouseMaterials(houseId));
+    }
 
     @GetMapping("/{houseId}")
     public ApiResponse<HouseStageResponse> getGanttData(

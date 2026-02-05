@@ -24,6 +24,7 @@ public class HouseStageMaterialsResponse {
         private String type;            // FLOOR, WALL, CEILING, CABINET
         private String displayName;     // 材料名
         private BigDecimal area;        // 面积
+        private String remark;
     }
 
     @Data

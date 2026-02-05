@@ -73,7 +73,6 @@ public class FurnitureSchemeService {
         material.setCeilingArea(request.getCeilingArea());
         material.setCabinetMaterial(request.getCabinetMaterial());
         material.setCabinetArea(request.getCabinetArea());
-        material.setRemark(request.getRemark());
 
         schemeRoomMaterialRepository.save(material);
 

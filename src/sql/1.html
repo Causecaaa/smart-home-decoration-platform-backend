@@ -141,26 +141,31 @@ room_id BIGINT NOT NULL COMMENT '房间ID',
 -- 地面
 floor_material VARCHAR(50) COMMENT '地面材质',
 floor_area DECIMAL(6,2) COMMENT '地面面积㎡',
+floor_notes VARCHAR(255) COMMENT '地面补充说明',
 
 -- 墙面
 wall_material VARCHAR(50) COMMENT '墙面材质',
 wall_area DECIMAL(6,2) COMMENT '墙面面积㎡',
+wall_notes VARCHAR(255) COMMENT '墙面补充说明',
 
 -- 吊顶
 ceiling_material VARCHAR(50) COMMENT '吊顶材质',
 ceiling_area DECIMAL(6,2) COMMENT '吊顶面积㎡',
+ceiling_notes VARCHAR(255) COMMENT '吊顶补充说明',
 
 -- 柜体（定制类）
 cabinet_material VARCHAR(50) COMMENT '柜体材质',
 cabinet_area DECIMAL(6,2) COMMENT '柜体展开面积㎡',
+cabinet_notes VARCHAR(255) COMMENT '柜体补充说明',
 
-remark VARCHAR(255) COMMENT '设计说明',
 
 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
 FOREIGN KEY (scheme_id) REFERENCES furniture_scheme(scheme_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='房间方案材料汇总表（简化版）';
+
+
 
 CREATE TABLE material (
 material_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '主材ID',
@@ -186,6 +191,32 @@ created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+CREATE TABLE product (
+product_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '商品ID',
+
+name VARCHAR(100) NOT NULL COMMENT '商品名称',
+
+material_type TINYINT NOT NULL COMMENT '1主材 2辅材',
+
+main_category VARCHAR(30) COMMENT '主类：FLOOR / WALL / CEILING / CABINET / AUX',
+sub_category VARCHAR(50) COMMENT '子类：木地板 / 瓷砖 / 墙纸 / 电线',
+
+brand VARCHAR(50) COMMENT '品牌（展示用）',
+
+price DECIMAL(10,2) NOT NULL COMMENT '基础单价',
+unit VARCHAR(20) COMMENT '单位：㎡ / 卷 / kg / 件',
+
+stock INT DEFAULT 0 COMMENT '库存',
+
+description TEXT COMMENT '商品描述',
+
+has_spec TINYINT DEFAULT 0 COMMENT '是否有规格可选',
+
+status TINYINT DEFAULT 1 COMMENT '1上架 0下架',
+
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) COMMENT='商品统一表（主材 / 辅材）';
 
 
 

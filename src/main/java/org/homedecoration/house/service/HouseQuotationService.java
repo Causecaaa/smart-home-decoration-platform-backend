@@ -65,14 +65,26 @@ public class HouseQuotationService {
             SchemeRoomMaterial scheme = schemeRoomMaterialService.getByRoomId(room.getId());
             HouseQuotationResponse.MainMaterials mainMaterials = new HouseQuotationResponse.MainMaterials();
 
-            // floor
-            mainMaterials.setFloor(buildMaterialDetail(String.valueOf(scheme.getFloorMaterial()), scheme.getFloorArea()));
-            // wall
-            mainMaterials.setWall(buildMaterialDetail(String.valueOf(scheme.getWallMaterial()), scheme.getWallArea()));
-            // ceiling
-            mainMaterials.setCeiling(buildMaterialDetail(String.valueOf(scheme.getCeilingMaterial()), scheme.getCeilingArea()));
-            // cabinet
-            mainMaterials.setCabinet(buildMaterialDetail(String.valueOf(scheme.getCabinetMaterial()), scheme.getCabinetArea()));
+            mainMaterials.setFloor(buildMaterialDetail(
+                    String.valueOf(scheme.getFloorMaterial()),
+                    scheme.getFloorArea(),
+                    scheme.getFloor_notes() // 这里是你想显示的品牌 + 尺寸备注
+            ));
+            mainMaterials.setWall(buildMaterialDetail(
+                    String.valueOf(scheme.getWallMaterial()),
+                    scheme.getWallArea(),
+                    scheme.getWall_notes()
+            ));
+            mainMaterials.setCeiling(buildMaterialDetail(
+                    String.valueOf(scheme.getCeilingMaterial()),
+                    scheme.getCeilingArea(),
+                    scheme.getCeiling_notes()
+            ));
+            mainMaterials.setCabinet(buildMaterialDetail(
+                    String.valueOf(scheme.getCabinetMaterial()),
+                    scheme.getCabinetArea(),
+                    scheme.getCabinet_notes()
+            ));
 
             // 房间主材总价
             BigDecimal roomTotal = BigDecimal.ZERO;
@@ -265,25 +277,25 @@ public class HouseQuotationService {
     /**
      * 构建主材明细
      */
-    private HouseQuotationResponse.MaterialDetail buildMaterialDetail(String type, BigDecimal area) {
+    private HouseQuotationResponse.MaterialDetail buildMaterialDetail(String type, BigDecimal area, String remark) {
         if (type == null || area == null) {
             return null;
         }
 
         List<Material> materialList = materialRepository.findByType(type);
-        if (materialList.isEmpty()) return null;
-
-        Material material = materialList.get(0);
+        Material material = materialList.isEmpty() ? null : materialList.get(0);
 
         HouseQuotationResponse.MaterialDetail detail = new HouseQuotationResponse.MaterialDetail();
         detail.setType(type);
-        detail.setDisplayName(material.getDisplayName());
+        detail.setDisplayName(material != null ? material.getDisplayName() : type);
         detail.setArea(area);
-        detail.setUnitPrice(material.getUnitPrice());
-        detail.setCost(material.getUnitPrice().multiply(area));
+        detail.setUnitPrice(material != null ? material.getUnitPrice() : BigDecimal.ZERO);
+        detail.setCost(detail.getUnitPrice().multiply(area));
+        detail.setRemark(remark); // 来自 SchemeRoomMaterial 的 floor_notes / wall_notes / ceiling_notes / cabinet_notes
 
         return detail;
     }
+
 
     /**
      * 计算辅材用量（可根据业务逻辑调整）

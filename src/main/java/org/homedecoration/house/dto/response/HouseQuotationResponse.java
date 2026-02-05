@@ -44,6 +44,7 @@ public class HouseQuotationResponse {
         private BigDecimal area;      // 面积㎡
         private BigDecimal unitPrice; // 单价
         private BigDecimal cost;      // 小项费用
+        private String remark;
     }
 
     @Data

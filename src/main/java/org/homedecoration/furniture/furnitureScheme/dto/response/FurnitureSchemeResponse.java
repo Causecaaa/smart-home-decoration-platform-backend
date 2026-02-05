@@ -72,7 +72,6 @@ public class FurnitureSchemeResponse {
             dto.setWallArea(toDouble(material.getWallArea()));
             dto.setCeilingArea(toDouble(material.getCeilingArea()));
             dto.setCabinetArea(toDouble(material.getCabinetArea()));
-            dto.setRemark(material.getRemark());
         }
 
         return dto;

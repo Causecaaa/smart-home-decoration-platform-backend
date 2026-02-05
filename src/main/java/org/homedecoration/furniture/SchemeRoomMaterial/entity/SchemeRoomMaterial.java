@@ -29,24 +29,25 @@ public class SchemeRoomMaterial {
     @Enumerated(EnumType.STRING)
     private FloorMaterialType floorMaterial;
     private BigDecimal floorArea;
+    private String floor_notes;
 
     /** 墙面材料类型 */
     @Enumerated(EnumType.STRING)
     private WallMaterialType wallMaterial;
     private BigDecimal wallArea;
+    private String wall_notes;
 
     /** 顶面材料类型 */
     @Enumerated(EnumType.STRING)
     private CeilingMaterialType ceilingMaterial;
     private BigDecimal ceilingArea;
+    private String ceiling_notes;
 
     /** 柜体材料类型 */
     @Enumerated(EnumType.STRING)
     private CabinetMaterialType cabinetMaterial;
     private BigDecimal cabinetArea;
-
-    /** 设计备注 */
-    private String remark;
+    private String cabinet_notes;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

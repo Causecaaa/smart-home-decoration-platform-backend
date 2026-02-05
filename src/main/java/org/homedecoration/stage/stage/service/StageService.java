@@ -416,6 +416,7 @@ public class StageService {
                                 : materialType
                 );
                 detail.setArea(area);
+                detail.setRemark(getRemarkByType(scheme, type));
 
                 response.getMainMaterials().get(type).add(detail);
 
@@ -452,6 +453,16 @@ public class StageService {
                 + (System.currentTimeMillis() - start) + "ms");
 
         return response;
+    }
+
+    private String getRemarkByType(SchemeRoomMaterial scheme, String type) {
+        return switch (type) {
+            case "FLOOR" -> scheme.getFloor_notes();
+            case "WALL" -> scheme.getWall_notes();
+            case "CEILING" -> scheme.getCeiling_notes();
+            case "CABINET" -> scheme.getCabinet_notes();
+            default -> null;
+        };
     }
 
 
@@ -574,6 +585,7 @@ public class StageService {
                     matInfo.setType(m.getType());
                     matInfo.setDisplayName(m.getDisplayName());
                     matInfo.setArea(m.getArea());
+                    matInfo.setRemark(m.getRemark());
                     info.getMainMaterials().add(matInfo);
                 }
             }
