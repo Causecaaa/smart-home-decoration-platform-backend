@@ -91,6 +91,7 @@ public class StageAssignmentService {
                 );
 
         WorkerStageCalendarResponse response = new WorkerStageCalendarResponse();
+
         List<WorkerStageCalendarResponse.StageAssignmentItem> items = assignments.stream()
                 .map(assignment -> toWorkerStageAssignmentItem(workerId, assignment))
                 .toList();
@@ -156,12 +157,18 @@ public class StageAssignmentService {
         List<WorkerSimpleResponse> coworkers = stageAssignmentRepository.findByStageId(stage.getId())
                 .stream()
                 .filter(stageAssignment -> stageAssignment.getStatus() != StageAssignment.AssignmentStatus.CANCELLED)
-                .map(StageAssignment::getWorkerId)
-                .filter(Objects::nonNull)
-                .filter(otherWorkerId -> !otherWorkerId.equals(workerId))
+                .filter(stageAssignment -> !stageAssignment.getWorkerId().equals(workerId)) // 排除当前工人
+                .map(stageAssignment -> {
+                    WorkerSimpleResponse coworker = workerService.getSimpleResponse(stageAssignment.getWorkerId());
+                    // 设置新增字段
+                    coworker.setExpected_Start_at(stageAssignment.getExpectedStartAt().toLocalDate());
+                    coworker.setExpected_End_at(stageAssignment.getExpectedEndAt().toLocalDate().minusDays(1)); // 减去一天以匹配前端需求
+                    return coworker;
+                })
                 .distinct()
-                .map(workerService::getSimpleResponse)
                 .toList();
+
+
         item.setCoworkers(coworkers);
 
         HouseStageMaterialsResponse materials = stageService.getHouseMaterialsByStage(
@@ -259,16 +266,6 @@ public class StageAssignmentService {
 
         // ========= 情况一：请假在 assignment 开始前，整体换人 =========
         if (assignment.getStatus().equals(StageAssignment.AssignmentStatus.PENDING)) {
-            System.out.println("情况一：请假在 assignment 开始前，整体换人");
-            System.out.println("情况一：请假在 assignment 开始前，整体换人");
-            System.out.println("情况一：请假在 assignment 开始前，整体换人");
-            System.out.println("情况一：请假在 assignment 开始前，整体换人");System.out.println("情况一：请假在 assignment 开始前，整体换人");
-            System.out.println("情况一：请假在 assignment 开始前，整体换人");
-            System.out.println("情况一：请假在 assignment 开始前，整体换人");
-            System.out.println("情况一：请假在 assignment 开始前，整体换人");
-            System.out.println("情况一：请假在 assignment 开始前，整体换人");System.out.println("情况一：请假在 assignment 开始前，整体换人");
-            System.out.println("情况一：请假在 assignment 开始前，整体换人");
-
 
             Worker replacement = findReplacement(stage, house, leaveStart, leaveEnd);
             assignment.setWorkerId(replacement.getUserId());
@@ -279,20 +276,7 @@ public class StageAssignmentService {
 
         // ========= 情况二：请假在 assignment 期间，拆分 =========
         if(assignment.getStatus().equals(StageAssignment.AssignmentStatus.IN_PROGRESS)){
-            System.out.println("情况二：请假在 assignment 期间，拆分");
-            System.out.println("情况二：请假在 assignment 期间，拆分");
-            System.out.println("情况二：请假在 assignment 期间，拆分");
-            System.out.println("情况二：请假在 assignment 期间，拆分");
-            System.out.println("情况二：请假在 assignment 期间，拆分");
-            System.out.println("情况二：请假在 assignment 期间，拆分");
-            System.out.println("情况二：请假在 assignment 期间，拆分");
-            System.out.println("情况二：请假在 assignment 期间，拆分");
-            System.out.println("情况二：请假在 assignment 期间，拆分");
-            System.out.println("情况二：请假在 assignment 期间，拆分");
-            System.out.println("情况二：请假在 assignment 期间，拆分");
-            System.out.println("情况二：请假在 assignment 期间，拆分");
-            System.out.println("情况二：请假在 assignment 期间，拆分");
-            System.out.println("情况二：请假在 assignment 期间，拆分");
+
             // ② 创建请假占位
             createLeaveAssignment(workerId, leaveDate);
 
@@ -310,8 +294,8 @@ public class StageAssignmentService {
                 newAssignment.setStageId(stage.getId());
                 newAssignment.setWorkerId(replacement.getUserId());
                 newAssignment.setExpectedStartAt(replacementStart);
-                newAssignment.setExpectedEndAt(replacementEnd.minusDays(1));
-                newAssignment.setStatus(StageAssignment.AssignmentStatus.PENDING);
+                newAssignment.setExpectedEndAt(replacementEnd);
+                newAssignment.setStatus(StageAssignment.AssignmentStatus.IN_PROGRESS);
 
                 stageAssignmentRepository.save(newAssignment);
             }

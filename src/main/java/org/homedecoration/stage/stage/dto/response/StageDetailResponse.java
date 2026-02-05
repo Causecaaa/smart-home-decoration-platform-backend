@@ -3,6 +3,7 @@ package org.homedecoration.stage.stage.dto.response;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +45,8 @@ public class StageDetailResponse {
         private String email;
         private String skillLevel;       // 熟练度：JUNIOR / SKILLED / MASTER
         private BigDecimal rating;           // 对外评分
+        private LocalDate expectedStartAt;
+        private LocalDate expectedEndAt;
     }
 
 }

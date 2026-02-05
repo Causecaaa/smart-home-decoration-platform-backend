@@ -15,6 +15,7 @@ import org.homedecoration.identity.worker.service.WorkerService;
 import org.homedecoration.identity.worker.worker_skill.entity.WorkerSkill;
 import org.homedecoration.stage.assignment.dto.response.StageAssignmentResponse;
 import org.homedecoration.stage.assignment.service.StageAssignmentService;
+import org.homedecoration.stage.stage.service.StageService;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -29,6 +30,7 @@ public class WorkerController {
     private final WorkerService workerService;
     private final JwtUtil jwtUtil;
     private final StageAssignmentService stageAssignmentService;
+    private final StageService stageService;
 
     @GetMapping("/available-workers")
     public ApiResponse<List<Worker>> getAvailableWorkers(
@@ -118,4 +120,5 @@ public class WorkerController {
             @RequestParam(required = false) Boolean enabled) {
         return ApiResponse.success(workerService.list(city, workStatus, enabled));
     }
+
 }

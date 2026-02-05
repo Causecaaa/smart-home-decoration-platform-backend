@@ -1,5 +1,6 @@
 package org.homedecoration.stage.stage.service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.homedecoration.identity.user.entity.User;
 import org.homedecoration.identity.user.service.UserService;
@@ -597,6 +598,9 @@ public class StageService {
             wi.setPhone(worker.getUser().getPhone());
             wi.setEmail(worker.getUser().getEmail());
 
+            wi.setExpectedStartAt(assignment.getExpectedStartAt().toLocalDate());
+            wi.setExpectedEndAt(assignment.getExpectedEndAt().toLocalDate().minusDays(1));
+
             // 技能信息（如果一个工人可能有多技能，按主工种取）
             Optional<WorkerSkill> skillOpt = workerSkillRepository.findByWorkerIdAndWorkerType(
                     worker.getUserId(), stage.getMainWorkerType()
@@ -619,5 +623,53 @@ public class StageService {
         return response;
     }
 
+    @Transactional
+    public void StartStage(Long userId, Long houseId, Integer order) {
+        House house = houseService.getHouseById(houseId);
+        if(!house.getUser().getId().equals(userId)){
+            throw new RuntimeException("无操作权限");
+        }
+        Stage stage = (Stage) stageRepository.findByHouseIdAndOrder(houseId, order)
+                .orElseThrow(() -> new RuntimeException("阶段不存在"));
+        stage.setStatus(Stage.StageStatus.IN_PROGRESS);
+        stage.setStart_at(LocalDateTime.now());
+        stageRepository.save(stage);
 
+        List<StageAssignment> assignments = stageAssignmentRepository.findByStageId(stage.getId());
+
+        for (StageAssignment assignment : assignments) {
+            assignment.setStatus(StageAssignment.AssignmentStatus.IN_PROGRESS);
+            assignment.setStartAt(LocalDateTime.now());
+        }
+        stageAssignmentRepository.saveAll(assignments);
+    }
+
+    @Transactional
+    public void CompleteStage(Long stageId) {
+        Stage stage = stageRepository.findById(stageId)
+                .orElseThrow(() -> new RuntimeException("阶段不存在"));
+        stage.setStatus(Stage.StageStatus.COMPLETED);
+        stage.setEnd_at(LocalDateTime.now());
+        stageRepository.save(stage);
+
+        List<StageAssignment> assignments = stageAssignmentRepository.findByStageId(stage.getId());
+        for (StageAssignment assignment : assignments) {
+            assignment.setStatus(StageAssignment.AssignmentStatus.COMPLETED);
+            assignment.setEndAt(LocalDateTime.now());
+        }
+        stageAssignmentRepository.saveAll(assignments);
+    }
+
+
+    @Transactional
+    public void AcceptStage(Long userId, Long houseId, Integer order) {
+        House house = houseService.getHouseById(houseId);
+        if(!house.getUser().getId().equals(userId)){
+            throw new RuntimeException("无操作权限");
+        }
+        Stage stage = (Stage) stageRepository.findByHouseIdAndOrder(houseId, order)
+                .orElseThrow(() -> new RuntimeException("阶段不存在"));
+        stage.setStatus(Stage.StageStatus.ACCEPTED);
+        stageRepository.save(stage);
+    }
 }

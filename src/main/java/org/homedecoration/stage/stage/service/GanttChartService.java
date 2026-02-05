@@ -4,13 +4,16 @@ import lombok.RequiredArgsConstructor;
 import org.homedecoration.stage.assignment.entity.StageAssignment;
 import org.homedecoration.stage.assignment.repository.StageAssignmentRepository;
 import org.homedecoration.stage.assignment.service.StageAssignmentService;
+import org.homedecoration.stage.stage.dto.response.HouseStageMaterialsResponse;
 import org.homedecoration.stage.stage.dto.response.HouseStageResponse;
 import org.homedecoration.stage.stage.entity.Stage;
 import org.homedecoration.stage.stage.repository.StageRepository;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.homedecoration.stage.stage.service.StageService.STATUS_MAP;
 import static org.homedecoration.stage.stage.service.StageService.WORKER_TYPE_MAP;
@@ -22,11 +25,28 @@ public class GanttChartService {
     private final StageRepository stageRepository;
     private final StageAssignmentService stageAssignmentService;
 
+    private static final String CACHE_PREFIX = "stage:";
+    private final RedisTemplate<String, Object> redisTemplate;
 
     /**
      * 获取房屋阶段甘特图数据（带 expectedEndAt）
      */
     public HouseStageResponse getGanttData(Long houseId) {
+        String cacheKey = CACHE_PREFIX + "materials:" +  ":" + houseId;
+
+        long startTime = System.currentTimeMillis();
+
+
+        HouseStageResponse cache =
+                (HouseStageResponse) redisTemplate.opsForValue().get(cacheKey);
+
+        if (cache != null) {
+            System.out.println("[StageMaterials] HIT cache, cost="
+                    + (System.currentTimeMillis() - startTime) + "ms");
+            return cache;
+        }
+
+
         List<Stage> stages = stageRepository.findByHouseIdOrderByOrderAsc(houseId);
         HouseStageResponse response = new HouseStageResponse();
 
@@ -62,6 +82,12 @@ public class GanttChartService {
 
             response.getStages().add(info);
         }
+
+        redisTemplate.opsForValue().set(cacheKey, response, 10, TimeUnit.MINUTES);
+
+        System.out.println("[HouseMaterials] MISS cache, cost="
+                + (System.currentTimeMillis() - startTime) + "ms");
+
 
         return response;
     }

@@ -75,4 +75,37 @@ public class StageController {
         return ApiResponse.success(null);
     }
 
+    @PostMapping("/{houseId}/{order}/start")
+    public ApiResponse<Void> startStage(
+            @PathVariable Long houseId,
+            @PathVariable Integer order,
+            HttpServletRequest request) {
+
+        Long userId = jwtUtil.getUserId(request);
+
+        stageService.StartStage(userId, houseId, order);
+        return ApiResponse.success(null);
+    }
+    @PostMapping("/{stageId}/complete")
+    public ApiResponse<Void> completeStage(
+            @PathVariable Long stageId,
+            HttpServletRequest request) {
+
+        jwtUtil.getUserId(request);
+
+        stageService.CompleteStage(stageId);
+        return ApiResponse.success(null);
+    }
+    @PostMapping("/{houseId}/{order}/accept")
+    public ApiResponse<Void> acceptStage(
+            @PathVariable Long houseId,
+            @PathVariable Integer order,
+            HttpServletRequest request) {
+
+        Long userId = jwtUtil.getUserId(request);
+
+        stageService.AcceptStage(userId, houseId, order);
+        return ApiResponse.success(null);
+    }
+
 }
