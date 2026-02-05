@@ -12,6 +12,6 @@ public interface HouseLayoutImageRepository extends JpaRepository<HouseLayoutIma
     List<HouseLayoutImage> findByLayout_Id(Long layoutId);
 
     // 可按图片类型查
-    List<HouseLayoutImage> findByLayoutIdAndImageType(Long layoutId, HouseLayoutImage.ImageType imageType);
+    HouseLayoutImage findByLayoutIdAndImageType(Long layoutId, HouseLayoutImage.ImageType imageType);
 
 }

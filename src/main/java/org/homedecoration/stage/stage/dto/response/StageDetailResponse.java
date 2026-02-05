@@ -1,6 +1,7 @@
 package org.homedecoration.stage.stage.dto.response;
 
 import lombok.Data;
+import org.homedecoration.house.entity.House;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -10,6 +11,7 @@ import java.util.List;
 
 @Data
 public class StageDetailResponse {
+    private House.DecorationType decorationType;
     private StageInfo stageInfo;
     private WorkerResponse workerResponse;
 
@@ -26,6 +28,8 @@ public class StageDetailResponse {
 
         private LocalDateTime start_at;
         private LocalDateTime end_at;
+
+        private String designing_image_url;
 
         private List<HouseStageMaterialsResponse.MaterialInfo> mainMaterials = new ArrayList<>();
         private List<HouseStageMaterialsResponse.AuxMaterialInfo> auxiliaryMaterials = new ArrayList<>();

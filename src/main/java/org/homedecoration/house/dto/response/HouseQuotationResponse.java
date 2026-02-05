@@ -2,6 +2,7 @@ package org.homedecoration.house.dto.response;
 
 import lombok.Data;
 import org.homedecoration.bill.entity.Bill;
+import org.homedecoration.house.entity.House;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -9,6 +10,8 @@ import java.util.List;
 @Data
 public class HouseQuotationResponse {
 
+    private Long houseId;
+    private House.DecorationType decorationType;
     private BigDecimal totalCost;                 // 主材总价 + 辅材总价 + 人工费
     private BigDecimal mainMaterialsCost;         // 主材总价
     private BigDecimal auxiliaryMaterialsCost;    // 全屋辅材总价

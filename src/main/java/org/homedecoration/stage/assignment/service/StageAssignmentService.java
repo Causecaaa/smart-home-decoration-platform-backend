@@ -12,6 +12,10 @@ import org.homedecoration.identity.worker.dto.response.WorkerSimpleResponse;
 import org.homedecoration.identity.worker.entity.Worker;
 import org.homedecoration.identity.worker.service.WorkerService;
 import org.homedecoration.identity.worker.dto.response.WorkerStageCalendarResponse;
+import org.homedecoration.layout.entity.HouseLayout;
+import org.homedecoration.layout.repository.HouseLayoutRepository;
+import org.homedecoration.layoutImage.entity.HouseLayoutImage;
+import org.homedecoration.layoutImage.repository.HouseLayoutImageRepository;
 import org.homedecoration.stage.assignment.dto.request.CreateStageAssignmentRequest;
 import org.homedecoration.stage.assignment.dto.request.UpdateStageAssignmentRequest;
 import org.homedecoration.stage.assignment.entity.StageAssignment;
@@ -38,6 +42,8 @@ public class StageAssignmentService {
     private final WorkerService workerService;
     private final HouseService houseService;
     private final LeaveRecordRepository leaveRecordRepository;
+    private final HouseLayoutRepository houseLayoutRepository;
+    private final HouseLayoutImageRepository houseLayoutImageRepository;
 
     public StageAssignment createAssignment(CreateStageAssignmentRequest request) {
         if (request.getStageId() == null || request.getWorkerId() == null) {
@@ -174,6 +180,11 @@ public class StageAssignmentService {
         item.setUnitNo(house.getUnitNo());
         item.setRoomNo(house.getRoomNo());
         item.setArea(house.getArea());
+
+        HouseLayout layout = (HouseLayout) houseLayoutRepository.findByHouseIdAndLayoutStatus(house.getId(), HouseLayout.LayoutStatus.CONFIRMED)
+                .orElseThrow(() -> new RuntimeException("无确认布局"));
+        HouseLayoutImage designingImageUrl = houseLayoutImageRepository.findByLayoutIdAndImageType(layout.getId(), HouseLayoutImage.ImageType.FINAL);
+        item.setDesignation_image_url(designingImageUrl.getImageUrl());
 
         List<WorkerSimpleResponse> coworkers = stageAssignmentRepository.findByStageId(stage.getId())
                 .stream()

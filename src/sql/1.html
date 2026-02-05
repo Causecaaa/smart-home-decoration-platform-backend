@@ -332,7 +332,7 @@ UNIQUE KEY `uk_post_user` (`post_id`, `user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文章点赞记录表';
 
 
--- 工人表（极简版）
+-- 工人表
 CREATE TABLE worker (
 user_id BIGINT PRIMARY KEY COMMENT '用户ID',
 real_name VARCHAR(50) NOT NULL COMMENT '真实姓名',
@@ -425,11 +425,15 @@ CONSTRAINT fk_leave_worker FOREIGN KEY (worker_id) REFERENCES worker(user_id) ON
 
 CREATE TABLE `stage_review` (
 `id` BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '评价ID',
+`stage_id` BIGINT NOT NULL COMMENT '对应装修阶段ID',
 `assignment_id` BIGINT NOT NULL COMMENT '对应派工记录',
 `reviewer_id` BIGINT NOT NULL COMMENT '评价人ID（客户）',
 `rating` DOUBLE NOT NULL COMMENT '评分',
 `comment` VARCHAR(500) COMMENT '评价内容',
 `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+UNIQUE KEY `uk_stage_assignment_reviewer` (`assignment_id`, `reviewer_id`),
+KEY `idx_stage_review_stage_id` (`stage_id`),
+CONSTRAINT `fk_review_stage` FOREIGN KEY (`stage_id`) REFERENCES `stage`(`id`) ON DELETE CASCADE,
 CONSTRAINT `fk_review_assignment` FOREIGN KEY (`assignment_id`) REFERENCES `stage_assignment`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='阶段评价表';

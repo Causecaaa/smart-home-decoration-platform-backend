@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.homedecoration.house.entity.House;
 import org.homedecoration.identity.worker.worker_skill.entity.WorkerSkill;
 
 import java.time.LocalDateTime;
@@ -26,6 +27,10 @@ public class Stage {
 
     @Column(name = "house_id", nullable = false)
     private Long houseId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "house_id", insertable = false, updatable = false)
+    private House house;
 
     @Column(name = "stage_order", nullable = false)
     private Integer order;

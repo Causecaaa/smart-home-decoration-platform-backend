@@ -22,6 +22,8 @@ public class WorkerStageCalendarResponse {
         private LocalDate expected_End_at;    // 阶段结束
         private StageAssignment.AssignmentStatus status;
 
+        private String designation_image_url;
+
         private Long stageId;
         private String stageName;
 

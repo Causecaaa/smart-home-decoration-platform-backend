@@ -9,6 +9,7 @@ import org.homedecoration.furniture.SchemeRoomMaterial.entity.SchemeRoomMaterial
 import org.homedecoration.furniture.SchemeRoomMaterial.service.SchemeRoomMaterialService;
 import org.homedecoration.house.dto.response.HouseMaterialSummaryResponse;
 import org.homedecoration.house.dto.response.HouseQuotationResponse;
+import org.homedecoration.house.entity.House;
 import org.homedecoration.houseRoom.entity.HouseRoom;
 import org.homedecoration.houseRoom.service.HouseRoomService;
 import org.homedecoration.material.auxiliary.AuxiliaryMaterial;
@@ -131,7 +132,13 @@ public class HouseQuotationService {
         // 3️⃣ 计算人工费
         BigDecimal laborCost = totalArea.multiply(LABOR_UNIT_PRICE);
 
+        if(houseService.getHouseById(houseId).getDecorationType() == House.DecorationType.HALF){
+            mainMaterialTotal = BigDecimal.valueOf(0);
+        }
+        response.setHouseId(houseId);
+        response.setDecorationType(houseService.getHouseById(houseId).getDecorationType());
         response.setMainMaterialsCost(mainMaterialTotal);
+
         response.setLaborCost(laborCost);
 
         BigDecimal totalCost = mainMaterialTotal.add(auxiliaryTotal).add(laborCost);

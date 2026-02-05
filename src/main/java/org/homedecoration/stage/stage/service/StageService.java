@@ -7,6 +7,10 @@ import org.homedecoration.identity.user.service.UserService;
 import org.homedecoration.identity.worker.entity.Worker;
 import org.homedecoration.identity.worker.service.WorkerService;
 import org.homedecoration.identity.worker.worker_skill.repository.WorkerSkillRepository;
+import org.homedecoration.layout.entity.HouseLayout;
+import org.homedecoration.layout.repository.HouseLayoutRepository;
+import org.homedecoration.layoutImage.entity.HouseLayoutImage;
+import org.homedecoration.layoutImage.repository.HouseLayoutImageRepository;
 import org.homedecoration.stage.assignment.entity.StageAssignment;
 import org.homedecoration.stage.assignment.repository.StageAssignmentRepository;
 import org.homedecoration.stage.stage.dto.response.HouseStageMaterialsResponse;
@@ -61,6 +65,8 @@ public class StageService {
     private final SchemeRoomMaterialService schemeRoomMaterialService;
     private final WorkerSkillRepository workerSkillRepository;
     private final StageAssignmentRepository stageAssignmentRepository;
+    private final HouseLayoutRepository houseLayoutRepository;
+    private final HouseLayoutImageRepository houseLayoutImageRepository;
 
 
     public Stage getStage(Long stageId) {
@@ -533,6 +539,10 @@ public class StageService {
         if (!house.getUser().getId().equals(userId)) {
             throw new RuntimeException("无权限访问");
         }
+        HouseLayout layout = (HouseLayout) houseLayoutRepository.findByHouseIdAndLayoutStatus(houseId, HouseLayout.LayoutStatus.CONFIRMED)
+                .orElseThrow(() -> new RuntimeException("无确认布局"));
+        HouseLayoutImage designingImageUrl = houseLayoutImageRepository.findByLayoutIdAndImageType(layout.getId(), HouseLayoutImage.ImageType.FINAL);
+
 
         // 2️⃣ 获取对应阶段
         Stage stage = (Stage) stageRepository.findByHouseIdAndOrder(houseId, order)
@@ -540,6 +550,7 @@ public class StageService {
 
         // 3️⃣ 构建返回对象
         StageDetailResponse.StageInfo info = new StageDetailResponse.StageInfo();
+        info.setDesigning_image_url(designingImageUrl.getImageUrl());
         info.setOrder(stage.getOrder());
         info.setStageName(stage.getStageName());
         info.setStatus(STATUS_MAP.getOrDefault(stage.getStatus(), stage.getStatus().toString()));
@@ -618,6 +629,8 @@ public class StageService {
         }
 
         response.setWorkerResponse(workerResp);
+        response.setDecorationType(house.getDecorationType());
+
 
 
         return response;

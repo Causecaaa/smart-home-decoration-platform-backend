@@ -60,26 +60,28 @@ public class HouseLayoutImageService {
     public HouseLayoutImage createImage(Long layoutId, CreateLayoutImageRequest request, Long userId) {
         HouseLayout layout = houseLayoutService.getLayoutById(layoutId);
         User operator = userService.getById(userId);
-
-        layoutPermissionUtil.checkCanEdit(operator, layout, userId);
-
-
         HouseLayoutImage.ImageType type = request.getImageType();
-        switch (operator.getRole()) {
-            case USER -> {
-                if (type == null) type = HouseLayoutImage.ImageType.ORIGINAL;
-                else if (type != HouseLayoutImage.ImageType.ORIGINAL && type != HouseLayoutImage.ImageType.STRUCTURE) {
-                    throw new RuntimeException("Users can only upload ORIGINAL or STRUCTURE images");
+
+        if(request.getImageType() != HouseLayoutImage.ImageType.FINAL){
+            layoutPermissionUtil.checkCanEdit(operator, layout, userId);
+
+            switch (operator.getRole()) {
+                case USER -> {
+                    if (type == null) type = HouseLayoutImage.ImageType.ORIGINAL;
+                    else if (type != HouseLayoutImage.ImageType.ORIGINAL && type != HouseLayoutImage.ImageType.STRUCTURE) {
+                        throw new RuntimeException("Users can only upload ORIGINAL or STRUCTURE images");
+                    }
                 }
-            }
-            case DESIGNER -> {
-                if (type == null) type = HouseLayoutImage.ImageType.STRUCTURE;
-                else if (type != HouseLayoutImage.ImageType.STRUCTURE && type != HouseLayoutImage.ImageType.FURNITURE) {
-                    throw new RuntimeException("Designers can only upload STRUCTURE or FURNITURE images");
+                case DESIGNER -> {
+                    if (type == null) type = HouseLayoutImage.ImageType.STRUCTURE;
+                    else if (type != HouseLayoutImage.ImageType.STRUCTURE && type != HouseLayoutImage.ImageType.FURNITURE) {
+                        throw new RuntimeException("Designers can only upload STRUCTURE or FURNITURE images");
+                    }
                 }
+                default -> throw new RuntimeException("Unknown role");
             }
-            default -> throw new RuntimeException("Unknown role");
         }
+
 
         String filename = null;
         if (request.getFile() != null && !request.getFile().isEmpty()) {

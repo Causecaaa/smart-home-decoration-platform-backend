@@ -1,6 +1,7 @@
 package org.homedecoration.layout.service;
 
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.homedecoration.bill.dto.request.CreateBillRequest;
 import org.homedecoration.bill.entity.Bill;
 import org.homedecoration.bill.repository.BillRepository;
@@ -24,6 +25,8 @@ import org.homedecoration.layout.dto.request.UpdateLayoutRequest;
 import org.homedecoration.layout.dto.response.*;
 import org.homedecoration.layout.entity.HouseLayout;
 import org.homedecoration.layout.repository.HouseLayoutRepository;
+import org.homedecoration.layoutImage.entity.HouseLayoutImage;
+import org.homedecoration.layoutImage.repository.HouseLayoutImageRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -31,6 +34,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class HouseLayoutService {
 
     private final HouseLayoutRepository houseLayoutRepository;
@@ -44,24 +48,7 @@ public class HouseLayoutService {
     private final DesignerService designerService;
     private final HouseRepository houseRepository;
     private final HouseRoomRepository houseRoomRepository;
-
-    public HouseLayoutService(HouseLayoutRepository houseLayoutRepository, HouseRepository houseRepository,
-                              HouseService houseService, UserService userService,
-                              LayoutPermissionUtil layoutPermissionUtil, DesignerRepository designerRepository,
-                              BillRepository billRepository, BillService billService, UserRepository userRepository,
-                              DesignerService designerService, HouseRoomRepository houseRoomRepository) {
-        this.houseLayoutRepository = houseLayoutRepository;
-        this.houseService = houseService;
-        this.houseRepository = houseRepository;
-        this.userService = userService;
-        this.layoutPermissionUtil = layoutPermissionUtil;
-        this.designerRepository = designerRepository;
-        this.billRepository = billRepository;
-        this.billService = billService;
-        this.userRepository = userRepository;
-        this.designerService = designerService;
-        this.houseRoomRepository = houseRoomRepository;
-    }
+    private final HouseLayoutImageRepository imageRepository;
 
     public DraftLayoutResponse createDraft(CreateLayoutRequest request, Long userId) {
         House house = houseService.getHouseById(request.getHouseId());
@@ -141,7 +128,10 @@ public class HouseLayoutService {
 
         Bill bill = billRepository.findByBizTypeAndBizId(Bill.BizType.FURNITURE, layoutId).orElse(null);
 
-        return UserFurnitureResponse.toDTO(layout, schemeStatus, designer, bill);
+        UserFurnitureResponse dto = UserFurnitureResponse.toDTO(layout, schemeStatus, designer, bill);
+        Boolean canPayFinal = imageRepository.findByLayoutIdAndImageType(layoutId, HouseLayoutImage.ImageType.FINAL) != null;
+        dto.setCanPayFinal(canPayFinal);
+        return dto;
     }
 
     @Transactional

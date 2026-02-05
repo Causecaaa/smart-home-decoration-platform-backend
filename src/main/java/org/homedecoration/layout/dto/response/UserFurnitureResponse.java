@@ -25,6 +25,7 @@ public class UserFurnitureResponse {
     private BigDecimal billAmount;
     private BigDecimal depositAmount;
     private Bill.PayStatus payStatus;
+    private Boolean canPayFinal;
 
     public static UserFurnitureResponse toDTO(HouseLayout layout,
                                               FurnitureScheme.SchemeStatus furnitureStatus,

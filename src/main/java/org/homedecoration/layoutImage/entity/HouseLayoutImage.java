@@ -17,7 +17,7 @@ import java.time.Instant;
 @Table(name = "house_layout_image")
 public class HouseLayoutImage {
     public enum ImageType {
-        ORIGINAL, STRUCTURE, FURNITURE, USER
+        ORIGINAL, STRUCTURE, FURNITURE, USER, FINAL
     }
 
     @Id
