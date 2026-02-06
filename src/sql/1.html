@@ -191,32 +191,6 @@ created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE product (
-product_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '商品ID',
-
-name VARCHAR(100) NOT NULL COMMENT '商品名称',
-
-material_type TINYINT NOT NULL COMMENT '1主材 2辅材',
-
-main_category VARCHAR(30) COMMENT '主类：FLOOR / WALL / CEILING / CABINET / AUX',
-sub_category VARCHAR(50) COMMENT '子类：木地板 / 瓷砖 / 墙纸 / 电线',
-
-brand VARCHAR(50) COMMENT '品牌（展示用）',
-
-price DECIMAL(10,2) NOT NULL COMMENT '基础单价',
-unit VARCHAR(20) COMMENT '单位：㎡ / 卷 / kg / 件',
-
-stock INT DEFAULT 0 COMMENT '库存',
-
-description TEXT COMMENT '商品描述',
-
-has_spec TINYINT DEFAULT 0 COMMENT '是否有规格可选',
-
-status TINYINT DEFAULT 1 COMMENT '1上架 0下架',
-
-created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) COMMENT='商品统一表（主材 / 辅材）';
 
 
 
@@ -468,3 +442,102 @@ KEY `idx_stage_review_stage_id` (`stage_id`),
 CONSTRAINT `fk_review_stage` FOREIGN KEY (`stage_id`) REFERENCES `stage`(`id`) ON DELETE CASCADE,
 CONSTRAINT `fk_review_assignment` FOREIGN KEY (`assignment_id`) REFERENCES `stage_assignment`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='阶段评价表';
+
+
+CREATE TABLE product (
+product_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '商品ID',
+
+name VARCHAR(100) NOT NULL COMMENT '商品名称',
+
+material_type TINYINT NOT NULL COMMENT '1主材 2辅材',
+
+main_category VARCHAR(30) COMMENT '主类：FLOOR / WALL / CEILING / CABINET / AUX',
+sub_category VARCHAR(50) COMMENT '子类：木地板 / 瓷砖 / 墙纸',
+
+brand VARCHAR(50) COMMENT '品牌（展示用）',
+
+price DECIMAL(10,2) NOT NULL COMMENT '基础单价',
+unit VARCHAR(20) COMMENT '单位：㎡ / 卷 / kg / 件',
+
+stock INT DEFAULT 0 COMMENT '库存',
+
+description TEXT COMMENT '商品描述',
+
+has_spec TINYINT DEFAULT 0 COMMENT '是否有规格可选',
+
+status TINYINT DEFAULT 1 COMMENT '1上架 0下架',
+
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) COMMENT='商品统一表（主材 / 辅材）';
+
+
+
+
+CREATE TABLE stage_cart (
+id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '阶段购物车ID',
+
+stage_id BIGINT NOT NULL COMMENT '所属装修阶段',
+user_id BIGINT NOT NULL COMMENT '用户ID',
+
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+UNIQUE KEY uk_stage_user (stage_id, user_id),
+
+FOREIGN KEY (stage_id) REFERENCES stage(id),
+FOREIGN KEY (user_id) REFERENCES user(id)
+) COMMENT='阶段购物车（暂存）';
+
+CREATE TABLE stage_cart_item (
+id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '购物车项ID',
+
+cart_id BIGINT NOT NULL COMMENT '购物车ID',
+product_id BIGINT NOT NULL COMMENT '商品ID',
+
+quantity DECIMAL(10,2) NOT NULL COMMENT '数量',
+
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+UNIQUE KEY uk_cart_product (cart_id, product_id),
+
+FOREIGN KEY (cart_id) REFERENCES stage_cart(id),
+FOREIGN KEY (product_id) REFERENCES product(product_id)
+) COMMENT='阶段购物车商品明细';
+
+
+
+
+CREATE TABLE stage_order (
+id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '阶段订单ID',
+
+stage_id BIGINT NOT NULL COMMENT '所属装修阶段',
+user_id BIGINT NOT NULL COMMENT '下单用户',
+
+total_amount DECIMAL(10,2) NOT NULL COMMENT '订单总金额',
+status ENUM('CREATED','PAID','CANCELLED') DEFAULT 'CREATED',
+
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+FOREIGN KEY (stage_id) REFERENCES stage(id),
+FOREIGN KEY (user_id) REFERENCES user(id)
+) COMMENT='装修阶段订单表';
+
+
+
+CREATE TABLE stage_order_item (
+id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '订单项ID',
+
+stage_order_id BIGINT NOT NULL COMMENT '阶段订单ID',
+product_id BIGINT NOT NULL COMMENT '商品ID',
+
+quantity DECIMAL(10,2) NOT NULL COMMENT '购买数量',
+price DECIMAL(10,2) NOT NULL COMMENT '下单时单价',
+
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+FOREIGN KEY (stage_order_id) REFERENCES stage_order(id),
+FOREIGN KEY (product_id) REFERENCES product(product_id)
+) COMMENT='阶段订单商品明细';

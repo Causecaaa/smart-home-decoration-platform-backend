@@ -21,17 +21,20 @@ public class FurnitureSchemeResponse {
     // ===== 材料信息（核心） =====
     private String floorMaterial;
     private Double floorArea;
+    private String floor_notes;
 
     private String wallMaterial;
     private Double wallArea;
+    private String wall_notes;
 
     private String ceilingMaterial;
     private Double ceilingArea;
+    private String ceiling_notes;
 
     private String cabinetMaterial;
     private Double cabinetArea;
+    private String cabinet_notes;
 
-    private String remark;
 
     public static FurnitureSchemeResponse toDTO(
             FurnitureScheme scheme,
@@ -69,9 +72,13 @@ public class FurnitureSchemeResponse {
             }
 
             dto.setFloorArea(toDouble(material.getFloorArea()));
+            dto.setFloor_notes(material.getFloor_notes());
             dto.setWallArea(toDouble(material.getWallArea()));
+            dto.setWall_notes(material.getWall_notes());
             dto.setCeilingArea(toDouble(material.getCeilingArea()));
+            dto.setCeiling_notes(material.getCeiling_notes());
             dto.setCabinetArea(toDouble(material.getCabinetArea()));
+            dto.setCabinet_notes(material.getCabinet_notes());
         }
 
         return dto;

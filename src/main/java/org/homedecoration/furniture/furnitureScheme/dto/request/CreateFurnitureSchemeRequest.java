@@ -12,24 +12,27 @@ public class CreateFurnitureSchemeRequest {
 
     // 地面
     @JsonDeserialize(using = MaterialTypeDeserializer.class)
-    private SchemeRoomMaterial.FloorMaterialType floorMaterial;
-    private BigDecimal floorArea;
+    private SchemeRoomMaterial.FloorMaterialType floor_material;
+    private BigDecimal floor_area;
+    private String floor_notes;
 
     // 墙面
     @JsonDeserialize(using = MaterialTypeDeserializer.class)
-    private SchemeRoomMaterial.WallMaterialType wallMaterial;
-    private BigDecimal wallArea;
+    private SchemeRoomMaterial.WallMaterialType wall_material;
+    private BigDecimal wall_area;
+    private String wall_notes;
 
     // 顶面
     @JsonDeserialize(using = MaterialTypeDeserializer.class)
-    private SchemeRoomMaterial.CeilingMaterialType ceilingMaterial;
-    private BigDecimal ceilingArea;
+    private SchemeRoomMaterial.CeilingMaterialType ceiling_material;
+    private BigDecimal ceiling_area;
+    private String ceiling_notes;
 
     // 柜体（定制）
     @JsonDeserialize(using = MaterialTypeDeserializer.class)
-    private SchemeRoomMaterial.CabinetMaterialType cabinetMaterial;
-    private BigDecimal cabinetArea;
+    private SchemeRoomMaterial.CabinetMaterialType cabinet_material;
+    private BigDecimal cabinet_area;
+    private String cabinet_notes;
 
-    private String remark;
 }
 

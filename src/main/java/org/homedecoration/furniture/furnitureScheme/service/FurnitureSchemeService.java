@@ -65,14 +65,21 @@ public class FurnitureSchemeService {
         material.setSchemeId(savedScheme.getId());
         material.setRoomId(request.getRoomId());
 
-        material.setFloorMaterial(request.getFloorMaterial());
-        material.setFloorArea(request.getFloorArea());
-        material.setWallMaterial(request.getWallMaterial());
-        material.setWallArea(request.getWallArea());
-        material.setCeilingMaterial(request.getCeilingMaterial());
-        material.setCeilingArea(request.getCeilingArea());
-        material.setCabinetMaterial(request.getCabinetMaterial());
-        material.setCabinetArea(request.getCabinetArea());
+        material.setFloorMaterial(request.getFloor_material());
+        material.setFloorArea(request.getFloor_area());
+        material.setFloor_notes(request.getFloor_notes());
+
+        material.setWallMaterial(request.getWall_material());
+        material.setWallArea(request.getWall_area());
+        material.setWall_notes(request.getWall_notes());
+
+        material.setCeilingMaterial(request.getCeiling_material());
+        material.setCeilingArea(request.getCeiling_area());
+        material.setCeiling_notes(request.getCeiling_notes());
+
+        material.setCabinetMaterial(request.getCabinet_material());
+        material.setCabinetArea(request.getCabinet_area());
+        material.setCabinet_notes(request.getCabinet_notes());
 
         schemeRoomMaterialRepository.save(material);
 
