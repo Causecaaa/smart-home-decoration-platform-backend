@@ -13,6 +13,8 @@ import org.homedecoration.layoutImage.entity.HouseLayoutImage;
 import org.homedecoration.layoutImage.repository.HouseLayoutImageRepository;
 import org.homedecoration.stage.assignment.entity.StageAssignment;
 import org.homedecoration.stage.assignment.repository.StageAssignmentRepository;
+import org.homedecoration.stage.shopping.dto.response.StagePurchasedMaterialsResponse;
+import org.homedecoration.stage.shopping.service.StageOrderService;
 import org.homedecoration.stage.stage.dto.response.HouseStageMaterialsResponse;
 import org.homedecoration.stage.stage.dto.response.HouseStageResponse;
 import org.homedecoration.stage.stage.dto.response.StageDetailResponse;
@@ -67,6 +69,7 @@ public class StageService {
     private final StageAssignmentRepository stageAssignmentRepository;
     private final HouseLayoutRepository houseLayoutRepository;
     private final HouseLayoutImageRepository houseLayoutImageRepository;
+    private final StageOrderService stageOrderService;
 
 
     public Stage getStage(Long stageId) {
@@ -561,6 +564,7 @@ public class StageService {
 
         // 3️⃣ 构建返回对象
         StageDetailResponse.StageInfo info = new StageDetailResponse.StageInfo();
+        info.setStageId(stage.getId());
         info.setDesigning_image_url(designingImageUrl.getImageUrl());
         info.setOrder(stage.getOrder());
         info.setStageName(stage.getStageName());
@@ -603,6 +607,17 @@ public class StageService {
                 info.getAuxiliaryMaterials().add(auxInfo);
             }
         });
+
+
+        // 5️⃣ 填充用户已购买材料
+        StagePurchasedMaterialsResponse purchasedMaterials = stageOrderService.getPurchasedMaterials(stage.getId(), userId);
+        System.out.println("stageId" + stage.getId());
+        System.out.println("userId" + userId);
+        System.out.println("PURCHASED MATERIALS:" + purchasedMaterials);
+        info.setPurchasedMainMaterials(purchasedMaterials.getMainMaterials());
+
+        info.setPurchasedAuxiliaryMaterials(purchasedMaterials.getAuxiliaryMaterials());
+
 
         StageDetailResponse response = new StageDetailResponse();
         response.setStageInfo(info);

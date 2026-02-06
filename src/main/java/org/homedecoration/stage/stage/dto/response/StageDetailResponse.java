@@ -2,6 +2,7 @@ package org.homedecoration.stage.stage.dto.response;
 
 import lombok.Data;
 import org.homedecoration.house.entity.House;
+import org.homedecoration.stage.shopping.dto.response.StagePurchasedMaterialsResponse;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -18,6 +19,7 @@ public class StageDetailResponse {
 
     @Data
     public static class StageInfo {
+        private Long stageId;
         private Integer order;      // 1~7
         private String stageName;   // 阶段名称
         private String status;      // PENDING, IN_PROGRESS, FINISHED...
@@ -31,8 +33,12 @@ public class StageDetailResponse {
 
         private String designing_image_url;
 
+
         private List<HouseStageMaterialsResponse.MaterialInfo> mainMaterials = new ArrayList<>();
+        private List<StagePurchasedMaterialsResponse.MainMaterial> purchasedMainMaterials = new ArrayList<>();
+
         private List<HouseStageMaterialsResponse.AuxMaterialInfo> auxiliaryMaterials = new ArrayList<>();
+        private List<StagePurchasedMaterialsResponse.AuxMaterial> purchasedAuxiliaryMaterials = new ArrayList<>();
     }
 
     @Data
