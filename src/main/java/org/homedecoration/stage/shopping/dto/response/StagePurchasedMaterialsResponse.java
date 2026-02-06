@@ -16,6 +16,7 @@ public class StagePurchasedMaterialsResponse {
     public static class MainMaterial {
         private String type;         // FLOOR, WALL, CEILING, CABINET
         private String displayName;  // 商品名
+        private String image_url;
         private String unit;
         private String brand;
         private String remark;       // 备注

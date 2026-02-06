@@ -16,6 +16,7 @@ public class ProductResponse {
     private String subCategory;
     private String brand;
     private BigDecimal price;
+    private String image_url;
     private String unit;
     private Integer stock;
     private String description;
@@ -33,6 +34,7 @@ public class ProductResponse {
         response.setSubCategory(product.getSubCategory());
         response.setBrand(product.getBrand());
         response.setPrice(product.getPrice());
+        response.setImage_url(product.getImage_url());
         response.setUnit(product.getUnit());
         response.setStock(product.getStock());
         response.setDescription(product.getDescription());

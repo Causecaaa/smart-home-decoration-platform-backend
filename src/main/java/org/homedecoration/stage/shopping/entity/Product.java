@@ -30,6 +30,9 @@ public class Product {
     @Column(name = "sub_category", length = 50)
     private String subCategory;
 
+    @Column(name = "image_url", length = 200)
+    private String image_url;
+
     @Column(name = "brand", length = 50)
     private String brand;
 

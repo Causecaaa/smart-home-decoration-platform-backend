@@ -16,5 +16,6 @@ public class StageOrderResponse {
     private BigDecimal totalAmount;
     private StageOrder.OrderStatus status;
     private LocalDateTime createdAt;
+
     private List<StageOrderItemResponse> items;
 }

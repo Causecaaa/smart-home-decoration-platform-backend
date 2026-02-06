@@ -9,8 +9,10 @@ public class StageOrderItemResponse {
 
     private Long id;
     private Long productId;
+    private String brand;
+    private String image_url;
     private String productName;
-    private BigDecimal quantity;
     private BigDecimal price;
+    private BigDecimal quantity;
     private BigDecimal subtotal;
 }

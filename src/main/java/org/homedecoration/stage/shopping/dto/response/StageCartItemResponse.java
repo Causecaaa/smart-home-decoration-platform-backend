@@ -9,6 +9,8 @@ public class StageCartItemResponse {
 
     private Long id;
     private Long productId;
+    private String brand;
+    private String image_url;
     private String productName;
     private BigDecimal price;
     private BigDecimal quantity;

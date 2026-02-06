@@ -34,6 +34,13 @@ public class StageOrderController {
         return ApiResponse.success(stageOrderService.updateStatus(orderId, userId, StageOrder.OrderStatus.PAID));
     }
 
+    @GetMapping("/{stageId}/orders")
+    public ApiResponse<List<StageOrderResponse>> getOrders(@PathVariable Long stageId,
+                                                           HttpServletRequest httpRequest) {
+        Long userId = jwtUtil.getUserId(httpRequest);
+        return ApiResponse.success(stageOrderService.getOrders(stageId, userId));
+    }
+
     @GetMapping("/{stageId}/summary")
     public ApiResponse<StagePurchasedMaterialsResponse> getPurchasedMaterials(
             @PathVariable Long stageId,

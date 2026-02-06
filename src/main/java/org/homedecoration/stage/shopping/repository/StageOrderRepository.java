@@ -13,4 +13,6 @@ public interface StageOrderRepository extends JpaRepository<StageOrder, Long> {
     Collection<Object> findByStageIdAndUserIdOrderByCreatedAtDesc(Long stageId, Long userId);
 
     List<StageOrder> findByStageIdAndUserIdAndStatus(Long stageId, Long userId, StageOrder.OrderStatus orderStatus);
+
+    List<StageOrder> findByStageIdAndUserIdOrderByCreatedAtAsc(Long stageId, Long userId);
 }

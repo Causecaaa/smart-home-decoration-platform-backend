@@ -143,6 +143,8 @@ public class StageCartService {
             response.setId(item.getId());
             response.setProductId(item.getProductId());
             response.setProductName(product.getName());
+            response.setImage_url(product.getImage_url());
+            response.setBrand(product.getBrand());
             response.setPrice(product.getPrice());
             response.setQuantity(item.getQuantity());
             response.setSubtotal(subtotal);

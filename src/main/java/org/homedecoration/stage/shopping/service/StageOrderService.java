@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -127,6 +128,8 @@ public class StageOrderService {
             response.setId(item.getId());
             response.setProductId(item.getProductId());
             response.setProductName(product.getName());
+            response.setImage_url(product.getImage_url());
+            response.setBrand(product.getBrand());
             response.setQuantity(item.getQuantity());
             response.setPrice(item.getPrice());
             response.setSubtotal(item.getPrice().multiply(item.getQuantity()));
@@ -149,26 +152,19 @@ public class StageOrderService {
     // Service
     @Transactional(readOnly = true)
     public StagePurchasedMaterialsResponse getPurchasedMaterials(Long stageId, Long userId) {
-        System.out.println(">>> getPurchasedMaterials called, stageId=" + stageId + ", userId=" + userId);
 
         // 1️⃣ 查出该阶段所有 PAID 的订单
         List<StageOrder> orders = stageOrderRepository
                 .findByStageIdAndUserIdAndStatus(stageId, userId, StageOrder.OrderStatus.PAID);
 
-        System.out.println("Found " + orders.size() + " PAID orders for stageId=" + stageId + ", userId=" + userId);
-        for (StageOrder o : orders) {
-            System.out.println("Order: id=" + o.getId() + ", total=" + o.getTotalAmount());
-        }
 
         Map<Long, StagePurchasedMaterialsResponse.MainMaterial> mainMap = new HashMap<>();
         Map<Long, StagePurchasedMaterialsResponse.AuxMaterial> auxMap = new HashMap<>();
 
         for (StageOrder order : orders) {
             List<StageOrderItem> items = stageOrderItemRepository.findByStageOrderId(order.getId());
-            System.out.println("Order id=" + order.getId() + " has " + items.size() + " items");
 
             for (StageOrderItem item : items) {
-                System.out.println("  Item: productId=" + item.getProductId() + ", qty=" + item.getQuantity() + ", price=" + item.getPrice());
                 Product product = productRepository.findById(item.getProductId())
                         .orElseThrow(() -> new BusinessException("商品不存在，ID=" + item.getProductId()));
 
@@ -181,6 +177,7 @@ public class StageOrderService {
                         m.setType(product.getMainCategory());
                         m.setDisplayName(product.getName());
                         m.setUnit(product.getUnit());
+                        m.setImage_url(product.getImage_url());
                         m.setBrand(product.getBrand());
                         m.setQuantity(BigDecimal.ZERO);
                         m.setSubtotal(BigDecimal.ZERO);
@@ -212,10 +209,30 @@ public class StageOrderService {
         response.getMainMaterials().addAll(mainMap.values());
         response.getAuxiliaryMaterials().addAll(auxMap.values());
 
-        System.out.println("Returning purchasedMaterials: main=" + response.getMainMaterials().size() +
-                ", aux=" + response.getAuxiliaryMaterials().size());
 
         return response;
+    }
+
+//    public class StageOrderResponse {
+//
+//        private Long id;
+//        private Long stageId;
+//        private Long userId;
+//        private BigDecimal totalAmount;
+//        private StageOrder.OrderStatus status;
+//        private LocalDateTime createdAt;
+//
+//        private List<StageOrderItemResponse> items;
+//    }
+    @Transactional(readOnly = true)
+    public List<StageOrderResponse> getOrders(Long stageId, Long userId) {
+        // 查找该 stageId 下该用户的所有订单，按时间倒序
+        List<StageOrder> orders = stageOrderRepository.findByStageIdAndUserIdOrderByCreatedAtAsc(stageId, userId);
+        List<StageOrderResponse> responseList = new ArrayList<>();
+        for (StageOrder order : orders) {
+            responseList.add(buildOrderResponse(order));
+        }
+        return responseList;
     }
 
 
