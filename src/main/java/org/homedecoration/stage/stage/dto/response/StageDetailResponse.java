@@ -28,11 +28,13 @@ public class StageDetailResponse {
         private String expectedStartAt;
         private Integer estimatedDay;  // 预计天数
 
+
         private LocalDateTime start_at;
         private LocalDateTime end_at;
 
         private String designing_image_url;
 
+        private List<String> recommendedMaterialTypes;
 
         private List<HouseStageMaterialsResponse.MaterialInfo> mainMaterials = new ArrayList<>();
         private List<StagePurchasedMaterialsResponse.MainMaterial> purchasedMainMaterials = new ArrayList<>();

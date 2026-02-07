@@ -20,4 +20,5 @@ public interface StageRepository extends JpaRepository<Stage, Long> {
 
     List<Stage> findByHouseIdAndOrderGreaterThan(Long houseId, int order);
 
+    boolean existsByHouseId(Long houseId);
 }

@@ -2,6 +2,7 @@ package org.homedecoration.stage.stage.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.homedecoration.house.repository.HouseRepository;
 import org.homedecoration.identity.user.entity.User;
 import org.homedecoration.identity.user.service.UserService;
 import org.homedecoration.identity.worker.entity.Worker;
@@ -24,7 +25,6 @@ import org.homedecoration.furniture.SchemeRoomMaterial.entity.SchemeRoomMaterial
 import org.homedecoration.furniture.SchemeRoomMaterial.service.SchemeRoomMaterialService;
 import org.homedecoration.house.dto.response.HouseMaterialSummaryResponse;
 import org.homedecoration.house.entity.House;
-import org.homedecoration.house.service.HouseService;
 import org.homedecoration.houseRoom.entity.HouseRoom;
 import org.homedecoration.houseRoom.service.HouseRoomService;
 import org.homedecoration.identity.worker.worker_skill.entity.WorkerSkill;
@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class StageService {
+    private static final int DEFAULT_ROOM_COUNT = 5;
 
     // 阶段映射常量
     private static final Map<Integer, String> STAGE_MAP = Map.of(
@@ -58,7 +59,7 @@ public class StageService {
     );
 
     // 依赖注入
-    private final HouseService houseService;
+    private final HouseRepository houseRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final StageRepository stageRepository;
     private final HouseRoomService houseRoomService;
@@ -77,12 +78,16 @@ public class StageService {
                 .orElseThrow(() -> new RuntimeException("阶段不存在"));
     }
 
+    public House getHouseById(Long houseId) {
+        return houseRepository.findById(houseId)
+                .orElseThrow(() -> new RuntimeException("房屋不存在"));
+    }
 
     /**
      * 获取按阶段分配的房屋材料清单
      */
     public HouseStageMaterialsResponse getHouseMaterialsByStage(Long houseId, Long userId) {
-        if(!houseService.getHouseById(houseId).getUser().getId().equals(userId)){
+        if(!getHouseById(houseId).getUser().getId().equals(userId)){
             throw new RuntimeException("无权限访问");
         }
         long start = System.currentTimeMillis();
@@ -218,6 +223,22 @@ public class StageService {
         };
     }
 
+    private static final List<String> ALL_MAIN_MATERIAL_TYPES = List.of(
+            "FLOOR",
+            "CABINET",
+            "WALL",
+            "CEILING"
+    );
+
+
+
+    private List<String> getRecommendedMaterialTypes(Integer stageOrder) {
+        return ALL_MAIN_MATERIAL_TYPES.stream()
+                .filter(type -> getStageForMaterial(type) == stageOrder)
+                .toList();
+    }
+
+
     /**
      * 辅材派送阶段规则
      */
@@ -234,6 +255,7 @@ public class StageService {
      * 异步创建装修阶段
      */
     @Async
+    @Transactional
     public void createStagesAsync(Long houseId) {
         System.out.println("[StageService] 异步方法 createStagesAsync 开始，houseId=" + houseId);
         createStagesForHouse(houseId); // 复用已有方法
@@ -244,11 +266,21 @@ public class StageService {
      * 为房屋创建装修阶段
      */
     public void createStagesForHouse(Long houseId) {
+        if (stageRepository.existsByHouseId(houseId)) {
+            System.out.println("[StageService] 阶段已存在，跳过创建，houseId=" + houseId);
+            return;
+        }
+
         System.out.println("[StageService] createStagesForHouse 开始，houseId=" + houseId);
 
-        House house = houseService.getHouseById(houseId);
+        House house = getHouseById(houseId);
         BigDecimal houseArea = house.getArea(); // 房屋总面积
-        int roomCount = houseRoomService.getConfirmedRoomsByHouseId(houseId).size();
+        int roomCount ;
+        if(house.getDecorationType().equals(House.DecorationType.LOOSE)){
+            roomCount = DEFAULT_ROOM_COUNT;
+        }else {
+            roomCount = houseRoomService.getConfirmedRoomsByHouseId(houseId).size();
+        }
         System.out.println("[StageService] 房屋总面积: " + houseArea + ", 房间数量: " + roomCount);
 
         List<Stage> stages = new ArrayList<>();
@@ -349,11 +381,11 @@ public class StageService {
         HouseMaterialSummaryResponse cache =
                 (HouseMaterialSummaryResponse) redisTemplate.opsForValue().get(cacheKey);
 
-        if (cache != null) {
-            System.out.println("[HouseMaterials] HIT cache, cost="
-                    + (System.currentTimeMillis() - start) + "ms");
-            return cache;
-        }
+//        if (cache != null) {
+//            System.out.println("[HouseMaterials] HIT cache, cost="
+//                    + (System.currentTimeMillis() - start) + "ms");
+//            return cache;
+//        }
 
 
         HouseMaterialSummaryResponse response = new HouseMaterialSummaryResponse();
@@ -473,7 +505,7 @@ public class StageService {
      * 计算辅材用量
      */
     private BigDecimal calculateAuxiliaryQuantity(AuxiliaryMaterial auxiliary, Long houseId) {
-        BigDecimal baseArea = houseService.getHouseWithCalculatedFields(houseId).getArea();
+        BigDecimal baseArea = getHouseById(houseId).getArea();
         int roomCount = houseRoomService.getConfirmedRoomsByHouseId(houseId).size();
 
         return switch (auxiliary.getCategory().toUpperCase()) {
@@ -503,7 +535,7 @@ public class StageService {
 
 
     public HouseStageResponse getStagesByHouse(Long houseId, Long userId) {
-        if(!houseService.getHouseById(houseId).getUser().getId().equals(userId)){
+        if(!getHouseById(houseId).getUser().getId().equals(userId)){
             throw new RuntimeException("无权限访问");
         }
 
@@ -549,13 +581,25 @@ public class StageService {
 
     public StageDetailResponse getStageDetail(Long houseId, Long userId, Integer order) {
         // 1️⃣ 校验权限
-        House house = houseService.getHouseById(houseId);
+        House house = getHouseById(houseId);
         if (!house.getUser().getId().equals(userId)) {
             throw new RuntimeException("无权限访问");
         }
-        HouseLayout layout = (HouseLayout) houseLayoutRepository.findByHouseIdAndLayoutStatus(houseId, HouseLayout.LayoutStatus.CONFIRMED)
-                .orElseThrow(() -> new RuntimeException("无确认布局"));
-        HouseLayoutImage designingImageUrl = houseLayoutImageRepository.findByLayoutIdAndImageType(layout.getId(), HouseLayoutImage.ImageType.FINAL);
+
+        boolean isLoose = house.getDecorationType() == House.DecorationType.LOOSE;
+
+
+        HouseLayout layout = null;
+        HouseLayoutImage designingImageUrl = null;
+
+        if (!isLoose) {
+            layout = (HouseLayout) houseLayoutRepository
+                    .findByHouseIdAndLayoutStatus(houseId, HouseLayout.LayoutStatus.CONFIRMED)
+                    .orElseThrow(() -> new RuntimeException("无确认布局"));
+
+            designingImageUrl = houseLayoutImageRepository
+                    .findByLayoutIdAndImageType(layout.getId(), HouseLayoutImage.ImageType.FINAL);
+        }
 
 
         // 2️⃣ 获取对应阶段
@@ -565,7 +609,9 @@ public class StageService {
         // 3️⃣ 构建返回对象
         StageDetailResponse.StageInfo info = new StageDetailResponse.StageInfo();
         info.setStageId(stage.getId());
-        info.setDesigning_image_url(designingImageUrl.getImageUrl());
+        info.setDesigning_image_url(
+                designingImageUrl != null ? designingImageUrl.getImageUrl() : null
+        );
         info.setOrder(stage.getOrder());
         info.setStageName(stage.getStageName());
         info.setStatus(STATUS_MAP.getOrDefault(stage.getStatus(), stage.getStatus().toString()));
@@ -579,7 +625,6 @@ public class StageService {
         HouseMaterialSummaryResponse allMaterials = calculateHouseMaterials(houseId);
 
         // 主材
-        Map<String, Integer> mainMaterialStageMap = new HashMap<>();
         allMaterials.getMainMaterials().forEach((type, list) -> {
             for (HouseMaterialSummaryResponse.MaterialDetail m : list) {
                 // 使用已有规则确定主材派送阶段
@@ -614,10 +659,9 @@ public class StageService {
         System.out.println("stageId" + stage.getId());
         System.out.println("userId" + userId);
         System.out.println("PURCHASED MATERIALS:" + purchasedMaterials);
+
         info.setPurchasedMainMaterials(purchasedMaterials.getMainMaterials());
-
         info.setPurchasedAuxiliaryMaterials(purchasedMaterials.getAuxiliaryMaterials());
-
 
         StageDetailResponse response = new StageDetailResponse();
         response.setStageInfo(info);
@@ -649,15 +693,17 @@ public class StageService {
                             .orElse("SKILLED") // 默认
             );
 
-
             wi.setRating(worker.getRating());
-
             workerResp.getWorkers().add(wi);
         }
 
         response.setWorkerResponse(workerResp);
         response.setDecorationType(house.getDecorationType());
-
+        if (isLoose) {
+            info.setRecommendedMaterialTypes(
+                    getRecommendedMaterialTypes(stage.getOrder())
+            );
+        }
 
 
         return response;
@@ -665,7 +711,7 @@ public class StageService {
 
     @Transactional
     public void StartStage(Long userId, Long houseId, Integer order) {
-        House house = houseService.getHouseById(houseId);
+        House house = getHouseById(houseId);
         if(!house.getUser().getId().equals(userId)){
             throw new RuntimeException("无操作权限");
         }
@@ -708,7 +754,7 @@ public class StageService {
 
     @Transactional
     public void AcceptStage(Long userId, Long houseId, Integer order) {
-        House house = houseService.getHouseById(houseId);
+        House house = getHouseById(houseId);
         if(!house.getUser().getId().equals(userId)){
             throw new RuntimeException("无操作权限");
         }

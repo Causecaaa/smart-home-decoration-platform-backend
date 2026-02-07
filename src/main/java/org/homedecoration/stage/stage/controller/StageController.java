@@ -5,9 +5,11 @@ import lombok.RequiredArgsConstructor;
 import org.homedecoration.common.response.ApiResponse;
 import org.homedecoration.common.utils.JwtUtil;
 import org.homedecoration.house.dto.response.HouseMaterialSummaryResponse;
+import org.homedecoration.stage.stage.dto.request.StageUpdateRequest;
 import org.homedecoration.stage.stage.dto.response.HouseStageMaterialsResponse;
 import org.homedecoration.stage.stage.dto.response.HouseStageResponse;
 import org.homedecoration.stage.stage.dto.response.StageDetailResponse;
+import org.homedecoration.stage.stage.entity.Stage;
 import org.homedecoration.stage.stage.service.GanttChartService;
 import org.homedecoration.stage.stage.service.StageService;
 import org.springframework.web.bind.annotation.*;
@@ -80,6 +82,19 @@ public class StageController {
         }
 
         ganttChartService.updateExpectedStartAt(houseId, order, start);
+        return ApiResponse.success(null);
+    }
+
+    @PostMapping("/{houseId}/{order}/update")
+    public ApiResponse<Void> updateStage(
+            @PathVariable Long houseId,
+            @PathVariable Integer order,
+            @RequestBody StageUpdateRequest stageUpdateRequest,
+            HttpServletRequest request) {
+
+        Long userId = jwtUtil.getUserId(request);
+
+        ganttChartService.updateStage(userId, houseId, order, stageUpdateRequest);
         return ApiResponse.success(null);
     }
 

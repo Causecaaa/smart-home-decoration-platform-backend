@@ -10,6 +10,7 @@ import org.homedecoration.identity.user.entity.User;
 import org.homedecoration.identity.user.repository.UserRepository;
 import org.homedecoration.layout.entity.HouseLayout;
 import org.homedecoration.layout.repository.HouseLayoutRepository;
+import org.homedecoration.stage.stage.service.StageService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,17 +22,19 @@ public class HouseService {
     private final UserRepository userRepository;
     private final HouseLayoutRepository layoutRepository;
     private final BillRepository billRepository;
+    private final StageService stageService;
 
     public HouseService(
             HouseRepository houseRepository,
             UserRepository userRepository,
             HouseLayoutRepository layoutRepository,
-            BillRepository billRepository
-    ) {
+            BillRepository billRepository,
+            StageService stageService) {
         this.houseRepository = houseRepository;
         this.userRepository = userRepository;
         this.layoutRepository = layoutRepository;
         this.billRepository = billRepository;
+        this.stageService = stageService;
     }
 
     // ================== 创建 ==================
@@ -52,7 +55,13 @@ public class HouseService {
         house.setDecorationType(request.getDecorationType());
         house.setFloorCount(request.getFloorCount());
 
-        return houseRepository.save(house);
+        House savedHouse = houseRepository.save(house);
+
+        if(House.DecorationType.LOOSE.equals(savedHouse.getDecorationType())){
+            stageService.createStagesAsync(savedHouse.getId());
+        }
+
+        return savedHouse;
     }
 
     // ================== 查询 ==================

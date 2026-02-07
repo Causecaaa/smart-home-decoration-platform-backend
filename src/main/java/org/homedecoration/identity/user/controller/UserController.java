@@ -124,9 +124,10 @@ public class UserController {
 
     // 修改用户角色
     @PatchMapping("/{id}/update-role")
-    public ApiResponse<UserResponse> updateUserRole(@PathVariable Long id, @RequestParam User.Role role) {
+    public ApiResponse<Void> updateUserRole(@PathVariable Long id, @RequestParam User.Role role) {
+        userService.updateRole(id, role);
         return ApiResponse.success(
-                UserResponse.toDTO(userService.updateRole(id, role))
+                null
         );
     }
 

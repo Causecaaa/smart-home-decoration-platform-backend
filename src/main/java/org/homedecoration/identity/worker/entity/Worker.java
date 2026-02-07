@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 @Data
 @Table(name = "worker")
 public class Worker {
-
     @Id
     @Column(name = "user_id")
     private Long userId;

@@ -7,6 +7,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.homedecoration.identity.worker.entity.Worker;
 import org.homedecoration.stage.stage.entity.Stage;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -15,6 +16,9 @@ import java.time.LocalDateTime;
 public class StageAssignment {
     public enum AssignmentStatus {
         PENDING,
+        INVITED,
+        WORKER_ACCEPTED,
+        WORKER_REJECTED,
         IN_PROGRESS,
         COMPLETED,
         CANCELLED
@@ -59,6 +63,9 @@ public class StageAssignment {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private AssignmentStatus status = AssignmentStatus.PENDING;
+
+    @Column(name = "daily_wage", precision = 10, scale = 2)
+    private BigDecimal dailyWage;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "assignment_type", nullable = false, length = 20)

@@ -140,11 +140,13 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public User updateRole(Long id, User.Role role) {
+    @Transactional
+    public void updateRole(Long id, User.Role role) {
         User user = getById(id);
         user.setRole(role);
-        return userRepository.save(user);
+        // ❌ 不要 userRepository.save(user);
     }
+
 
 
     public void deleteById(Long id) {

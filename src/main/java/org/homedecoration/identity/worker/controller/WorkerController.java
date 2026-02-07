@@ -8,14 +8,15 @@ import org.homedecoration.common.utils.JwtUtil;
 import org.homedecoration.identity.worker.dto.request.CreateWorkerRequest;
 import org.homedecoration.identity.worker.dto.request.LeaveRequest;
 import org.homedecoration.identity.worker.dto.request.UpdateWorkerProfileRequest;
-import org.homedecoration.identity.worker.dto.response.WorkerDetailResponse;
-import org.homedecoration.identity.worker.dto.response.WorkerStageCalendarResponse;
+import org.homedecoration.identity.worker.dto.response.*;
 import org.homedecoration.identity.worker.entity.Worker;
 import org.homedecoration.identity.worker.service.WorkerService;
 import org.homedecoration.identity.worker.worker_skill.entity.WorkerSkill;
 import org.homedecoration.stage.assignment.dto.response.StageAssignmentResponse;
 import org.homedecoration.stage.assignment.service.StageAssignmentService;
 import org.homedecoration.stage.stage.service.StageService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -30,27 +31,34 @@ public class WorkerController {
     private final WorkerService workerService;
     private final JwtUtil jwtUtil;
     private final StageAssignmentService stageAssignmentService;
-    private final StageService stageService;
+
+
 
     @GetMapping("/available-workers")
-    public ApiResponse<List<Worker>> getAvailableWorkers(
+    public ApiResponse<Page<WorkerResponse>> getAvailableWorkers(
             @RequestParam WorkerSkill.WorkerType mainWorkerType,
-            @RequestParam Integer requiredCount,
+            @RequestParam WorkerSkill.Level level,
             @RequestParam String city,
             @RequestParam String expectedStartAtStr,
-            @RequestParam String expectedEndAtStr) {
-
-        // 解析时间参数
+            @RequestParam String expectedEndAtStr,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+    ) {
         LocalDateTime expectedStartAt = LocalDateTime.parse(expectedStartAtStr);
         LocalDateTime expectedEndAt = LocalDateTime.parse(expectedEndAtStr);
 
-        // 调用服务方法
-        List<Worker> availableWorkers = workerService.findAvailableWorkers(
-                mainWorkerType, requiredCount, city, expectedStartAt, expectedEndAt);
-
+        Page<WorkerResponse> availableWorkers = workerService.findAvailableWorkersForSelection(
+                mainWorkerType,
+                level,
+                city,
+                expectedStartAt,
+                expectedEndAt,
+                PageRequest.of(page, size)
+        );
 
         return ApiResponse.success(availableWorkers);
     }
+
 
 
     @PostMapping("/apply")

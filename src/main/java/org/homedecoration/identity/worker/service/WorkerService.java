@@ -10,6 +10,7 @@ import org.homedecoration.identity.worker.LeaveRecord.LeaveRecordRepository;
 import org.homedecoration.identity.worker.dto.request.CreateWorkerRequest;
 import org.homedecoration.identity.worker.dto.request.UpdateWorkerProfileRequest;
 import org.homedecoration.identity.worker.dto.response.WorkerDetailResponse;
+import org.homedecoration.identity.worker.dto.response.WorkerResponse;
 import org.homedecoration.identity.worker.dto.response.WorkerSimpleResponse;
 import org.homedecoration.identity.worker.entity.Worker;
 import org.homedecoration.identity.worker.repository.WorkerRepository;
@@ -17,6 +18,9 @@ import org.homedecoration.identity.worker.worker_skill.entity.WorkerSkill;
 import org.homedecoration.identity.worker.worker_skill.repository.WorkerSkillRepository;
 import org.homedecoration.stage.assignment.entity.StageAssignment;
 import org.homedecoration.stage.assignment.repository.StageAssignmentRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +28,7 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -37,12 +42,18 @@ public class WorkerService {
     private final LeaveRecordRepository leaveRecordRepository;
 
     public WorkerDetailResponse apply(Long userId, @Valid CreateWorkerRequest request) {
+        // 先校验用户是否存在
+        User user = userService.getById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在");
+        }
+
+        // 再校验是否已经是工人
         if (workerRepository.existsById(userId)) {
             throw new IllegalStateException("用户已是工人");
         }
 
-        User user = userService.getById(userId);
-
+        // 创建 Worker 实体
         Worker worker = new Worker();
         worker.setUserId(userId);
         worker.setRealName(request.getRealName());
@@ -54,12 +65,16 @@ public class WorkerService {
                         : request.getWorkStatus()
         );
 
-        workerRepository.save(worker);
-
+        // 更新用户角色
         userService.updateRole(userId, User.Role.WORKER);
+
+        // 设置关联关系并保存
+        worker.setUser(user);
+        workerRepository.save(worker);
 
         return WorkerDetailResponse.toDTO(worker, user);
     }
+
 
     public WorkerDetailResponse getDetailById(Long workerId) {
         Worker worker = workerRepository.findById(workerId)
@@ -124,6 +139,119 @@ public class WorkerService {
                 .map(worker -> WorkerDetailResponse.toDTO(worker, userService.getById(worker.getUserId())))
                 .toList();
     }
+
+    public Page<WorkerResponse> findAvailableWorkersForSelection(
+            WorkerSkill.WorkerType mainWorkerType,
+            WorkerSkill.Level minLevel,
+            String city,
+            LocalDateTime expectedStartAt,
+            LocalDateTime expectedEndAt,
+            Pageable pageable
+    ) {
+        // 1️⃣ 获取符合条件的候选工人
+        List<Worker> candidates = findAvailableWorkerCandidates(
+                mainWorkerType, minLevel, city, expectedStartAt, expectedEndAt
+        );
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), candidates.size());
+
+        if (start >= candidates.size()) {
+            return Page.empty(pageable);
+        }
+
+        // 2️⃣ 分页切片
+        List<Worker> pageList = candidates.subList(start, end);
+
+        // 3️⃣ 映射成 WorkerResponse
+        List<WorkerResponse> responseList = pageList.stream()
+                .map(worker -> {
+                    WorkerResponse resp = new WorkerResponse();
+                    resp.setUserId(worker.getUserId());
+
+                    // 用户信息
+                    User user = userService.getById(worker.getUserId());
+                    resp.setUsername(user.getUsername());
+                    resp.setAvatarUrl(user.getAvatarUrl());
+                    resp.setPhone(user.getPhone());
+                    resp.setEmail(user.getEmail());
+
+                    resp.setRealName(worker.getRealName());
+                    resp.setRating(worker.getRating());
+
+                    // 取该工人对应工种的最高等级
+                    workerSkillRepository.findByWorkerIdAndWorkerType(worker.getUserId(), mainWorkerType)
+                            .stream()
+                            .max(Comparator.comparingInt(ws -> ws.getLevel().ordinal()))
+                            .ifPresent(ws -> resp.setLevel(ws.getLevel()));
+
+                    return resp;
+                })
+                .toList();
+
+        return new PageImpl<>(responseList, pageable, candidates.size());
+    }
+
+
+    public List<Worker> findAvailableWorkerCandidates(
+            WorkerSkill.WorkerType mainWorkerType,
+            WorkerSkill.Level minLevel, // ✅ 新增熟练度参数
+            String city,
+            LocalDateTime expectedStartAt,
+            LocalDateTime expectedEndAt
+    ) {
+        // 1️⃣ 查询符合城市、非平台工人且空闲的工人
+        List<Worker> workers = workerRepository
+                .findByCityAndIsPlatformWorkerAndWorkStatus(
+                        city, false, Worker.WorkStatus.IDLE
+                );
+
+        // 2️⃣ 获取符合工种并且等级 ≥ minLevel 的工人
+        Set<Long> qualifiedWorkerIds = workerSkillRepository
+                .findByWorkerType(mainWorkerType)
+                .stream()
+                .filter(ws -> ws.getLevel().ordinal() >= minLevel.ordinal()) // ✅ ordinal 比较
+                .collect(Collectors.groupingBy(WorkerSkill::getWorkerId,
+                        Collectors.maxBy(Comparator.comparingInt(ws -> ws.getLevel().ordinal()))))
+                .keySet();
+
+        return workers.stream()
+                .filter(w -> qualifiedWorkerIds.contains(w.getUserId()))
+                .sorted(Comparator.comparing(Worker::getRating).reversed())
+                .filter(worker -> {
+                    // 工作冲突
+                    boolean hasWorkConflict = stageAssignmentRepository
+                            .findByWorkerIdAndStatusIn(
+                                    worker.getUserId(),
+                                    List.of(
+                                            StageAssignment.AssignmentStatus.PENDING,
+                                            StageAssignment.AssignmentStatus.IN_PROGRESS
+                                    )
+                            )
+                            .stream()
+                            .filter(a -> a.getType() == StageAssignment.AssignmentType.WORK)
+                            .anyMatch(a ->
+                                    a.getExpectedStartAt().isBefore(expectedEndAt) &&
+                                            a.getExpectedEndAt().isAfter(expectedStartAt)
+                            );
+
+                    if (hasWorkConflict) return false;
+
+                    // 请假冲突
+                    boolean hasLeaveConflict = leaveRecordRepository
+                            .findByWorkerId(worker.getUserId())
+                            .stream()
+                            .anyMatch(l ->
+                                    !l.getLeaveDate().isBefore(expectedStartAt.toLocalDate()) &&
+                                            !l.getLeaveDate().isAfter(expectedEndAt.toLocalDate())
+                            );
+
+                    return !hasLeaveConflict;
+                })
+                .toList();
+    }
+
+
 
     public List<Worker> findAvailableWorkers(
             WorkerSkill.WorkerType mainWorkerType,
@@ -190,8 +318,6 @@ public class WorkerService {
 
         return availableWorkers;
     }
-
-
 
 
 }
