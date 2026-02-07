@@ -9,6 +9,7 @@ import org.homedecoration.identity.worker.LeaveRecord.LeaveRecord;
 import org.homedecoration.identity.worker.LeaveRecord.LeaveRecordRepository;
 import org.homedecoration.identity.worker.dto.request.CreateWorkerRequest;
 import org.homedecoration.identity.worker.dto.request.UpdateWorkerProfileRequest;
+import org.homedecoration.identity.worker.dto.response.LaborMarketResponse;
 import org.homedecoration.identity.worker.dto.response.WorkerDetailResponse;
 import org.homedecoration.identity.worker.dto.response.WorkerResponse;
 import org.homedecoration.identity.worker.dto.response.WorkerSimpleResponse;
@@ -16,6 +17,8 @@ import org.homedecoration.identity.worker.entity.Worker;
 import org.homedecoration.identity.worker.repository.WorkerRepository;
 import org.homedecoration.identity.worker.worker_skill.entity.WorkerSkill;
 import org.homedecoration.identity.worker.worker_skill.repository.WorkerSkillRepository;
+import org.homedecoration.stage.stage.entity.Stage;
+import org.homedecoration.stage.stage.service.StageService;
 import org.homedecoration.stage.assignment.entity.StageAssignment;
 import org.homedecoration.stage.assignment.repository.StageAssignmentRepository;
 import org.springframework.data.domain.Page;
@@ -40,6 +43,7 @@ public class WorkerService {
     private final StageAssignmentRepository stageAssignmentRepository;
     private final WorkerSkillRepository workerSkillRepository;
     private final LeaveRecordRepository leaveRecordRepository;
+    private final StageService stageService;
 
     public WorkerDetailResponse apply(Long userId, @Valid CreateWorkerRequest request) {
         // 先校验用户是否存在
@@ -190,6 +194,38 @@ public class WorkerService {
                 .toList();
 
         return new PageImpl<>(responseList, pageable, candidates.size());
+    }
+
+    public LaborMarketResponse getLaborMarketResponse(Long stageId, WorkerSkill.Level minLevel, Pageable pageable) {
+        Stage stage = stageService.getStage(stageId);
+        if (stage.getExpectedStartAt() == null) {
+            throw new IllegalStateException("阶段未设置预计开始时间");
+        }
+        if (stage.getEstimatedDay() == null) {
+            throw new IllegalStateException("阶段未设置预计工期");
+        }
+
+        String city = stage.getHouse().getCity();
+        LocalDateTime expectedStartAt = stage.getExpectedStartAt();
+        LocalDateTime expectedEndAt = expectedStartAt.plusDays(stage.getEstimatedDay());
+
+        Page<WorkerResponse> availableWorkers = findAvailableWorkersForSelection(
+                stage.getMainWorkerType(),
+                minLevel,
+                city,
+                expectedStartAt,
+                expectedEndAt,
+                pageable
+        );
+
+        LaborMarketResponse response = new LaborMarketResponse();
+        response.setStageId(stage.getId());
+        response.setMainWorkerType(stage.getMainWorkerType().name());
+        response.setRequiredCount(stage.getRequiredCount());
+        response.setExpectedStartAt(expectedStartAt.toString());
+        response.setEstimatedDay(stage.getEstimatedDay());
+        response.setWorkers(availableWorkers.getContent());
+        return response;
     }
 
 
