@@ -224,6 +224,10 @@ public class WorkerService {
         response.setRequiredCount(stage.getRequiredCount());
         response.setExpectedStartAt(expectedStartAt.toString());
         response.setEstimatedDay(stage.getEstimatedDay());
+        response.setPage(availableWorkers.getNumber());
+        response.setSize(availableWorkers.getSize());
+        response.setTotalPages(availableWorkers.getTotalPages());
+        response.setTotalElements(availableWorkers.getTotalElements());
         response.setWorkers(availableWorkers.getContent());
         return response;
     }

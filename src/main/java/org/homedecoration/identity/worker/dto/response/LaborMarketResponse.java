@@ -13,5 +13,10 @@ public class LaborMarketResponse {
     private String expectedStartAt;
     private Integer estimatedDay;  // 预计天数
 
+    private Integer page;
+    private Integer size;
+    private Integer totalPages;
+    private Long totalElements;
+
     private List<WorkerResponse> workers = new ArrayList<>();
 }
