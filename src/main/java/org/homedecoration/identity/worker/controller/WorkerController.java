@@ -14,7 +14,6 @@ import org.homedecoration.identity.worker.service.WorkerService;
 import org.homedecoration.identity.worker.worker_skill.entity.WorkerSkill;
 import org.homedecoration.stage.assignment.dto.response.StageAssignmentResponse;
 import org.homedecoration.stage.assignment.service.StageAssignmentService;
-import org.homedecoration.stage.stage.service.StageService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.*;
@@ -59,6 +58,20 @@ public class WorkerController {
         return ApiResponse.success(availableWorkers);
     }
 
+    @GetMapping("/labor-market")
+    public ApiResponse<LaborMarketResponse> getLaborMarket(
+            @RequestParam Long stageId,
+            @RequestParam WorkerSkill.Level minLevel,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+    ) {
+        LaborMarketResponse response = workerService.getLaborMarketResponse(
+                stageId,
+                minLevel,
+                PageRequest.of(page, size)
+        );
+        return ApiResponse.success(response);
+    }
 
 
     @PostMapping("/apply")
