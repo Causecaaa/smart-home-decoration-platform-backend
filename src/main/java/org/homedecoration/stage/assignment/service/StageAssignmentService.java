@@ -17,6 +17,8 @@ import org.homedecoration.layout.repository.HouseLayoutRepository;
 import org.homedecoration.layoutImage.entity.HouseLayoutImage;
 import org.homedecoration.layoutImage.repository.HouseLayoutImageRepository;
 import org.homedecoration.stage.assignment.dto.request.CreateStageAssignmentRequest;
+import org.homedecoration.stage.assignment.dto.request.InviteWorkersRequest;
+import org.homedecoration.stage.assignment.dto.request.StageInviteResponseRequest;
 import org.homedecoration.stage.assignment.dto.request.UpdateStageAssignmentRequest;
 import org.homedecoration.stage.assignment.entity.StageAssignment;
 import org.homedecoration.stage.assignment.repository.StageAssignmentRepository;
@@ -31,7 +33,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -152,6 +156,145 @@ public class StageAssignmentService {
         }
 
         return stageAssignmentRepository.save(assignment);
+    }
+
+    @Transactional
+    public List<StageAssignment> inviteWorkers(Long stageId, InviteWorkersRequest request) {
+        if (request.getWorkerIds() == null || request.getWorkerIds().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "工人列表不能为空");
+        }
+
+        Stage stage = stageService.getStage(stageId);
+        if (stage.getExpectedStartAt() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "阶段未设置预计开始时间");
+        }
+        if (stage.getEstimatedDay() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "阶段未设置预计工期");
+        }
+
+        House house = houseService.getHouseById(stage.getHouseId());
+        LocalDateTime expectedStartAt = stage.getExpectedStartAt();
+        LocalDateTime expectedEndAt = expectedStartAt.plusDays(stage.getEstimatedDay());
+
+        Set<Long> availableWorkerIds = workerService.findAvailableWorkerCandidates(
+                        stage.getMainWorkerType(),
+                        org.homedecoration.identity.worker.worker_skill.entity.WorkerSkill.Level.JUNIOR,
+                        house.getCity(),
+                        expectedStartAt,
+                        expectedEndAt
+                )
+                .stream()
+                .map(Worker::getUserId)
+                .collect(Collectors.toSet());
+
+        Set<Long> blockedStageWorkerIds = stageAssignmentRepository.findByStageId(stageId)
+                .stream()
+                .filter(assignment -> assignment.getType() == StageAssignment.AssignmentType.WORK)
+                .filter(assignment -> assignment.getStatus() != StageAssignment.AssignmentStatus.WORKER_REJECTED)
+                .filter(assignment -> assignment.getStatus() != StageAssignment.AssignmentStatus.COMPLETED)
+                .filter(assignment -> assignment.getStatus() != StageAssignment.AssignmentStatus.CANCELLED)
+                .map(StageAssignment::getWorkerId)
+                .collect(Collectors.toSet());
+
+        Set<Long> uniqueWorkerIds = new HashSet<>(request.getWorkerIds());
+        List<StageAssignment> assignments = uniqueWorkerIds.stream()
+                .filter(availableWorkerIds::contains)
+                .filter(workerId -> !blockedStageWorkerIds.contains(workerId))
+                .map(workerId -> {
+                    StageAssignment assignment = new StageAssignment();
+                    assignment.setStageId(stageId);
+                    assignment.setWorkerId(workerId);
+                    assignment.setExpectedStartAt(expectedStartAt);
+                    assignment.setExpectedEndAt(expectedEndAt);
+                    assignment.setDailyWage(request.getDailyWage());
+                    assignment.setStatus(StageAssignment.AssignmentStatus.INVITED);
+                    assignment.setType(StageAssignment.AssignmentType.WORK);
+                    return assignment;
+                })
+                .toList();
+
+        if (assignments.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "没有可邀请的工人");
+        }
+
+        return stageAssignmentRepository.saveAll(assignments);
+    }
+
+    @Transactional
+    public StageAssignment respondToInvite(Long assignmentId, StageInviteResponseRequest request) {
+        StageAssignment assignment = getAssignment(assignmentId);
+        if (assignment.getStatus() != StageAssignment.AssignmentStatus.INVITED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "当前邀请不可响应");
+        }
+
+        if (request.getStatus() == StageAssignment.AssignmentStatus.WORKER_ACCEPTED) {
+            ensureStageCapacity(assignment.getStageId());
+            assignment.setStatus(StageAssignment.AssignmentStatus.WORKER_ACCEPTED);
+            StageAssignment saved = stageAssignmentRepository.save(assignment);
+            cancelRemainingInvitesIfFull(saved.getStageId());
+            return saved;
+        }
+
+        if (request.getStatus() == StageAssignment.AssignmentStatus.WORKER_REJECTED) {
+            assignment.setStatus(StageAssignment.AssignmentStatus.WORKER_REJECTED);
+            return stageAssignmentRepository.save(assignment);
+        }
+
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "无效的邀请响应状态");
+    }
+
+    public List<StageAssignment> listInvitesByStage(Long stageId) {
+        return stageAssignmentRepository.findByStageId(stageId)
+                .stream()
+                .filter(assignment -> assignment.getType() == StageAssignment.AssignmentType.WORK)
+                .toList();
+    }
+
+    private void ensureStageCapacity(Long stageId) {
+        Stage stage = stageService.getStage(stageId);
+        if (stage.getRequiredCount() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "阶段未设置需求人数");
+        }
+
+        long acceptedCount = stageAssignmentRepository.findByStageId(stageId)
+                .stream()
+                .filter(assignment -> assignment.getType() == StageAssignment.AssignmentType.WORK)
+                .filter(assignment -> assignment.getStatus() == StageAssignment.AssignmentStatus.WORKER_ACCEPTED)
+                .count();
+
+        if (acceptedCount >= stage.getRequiredCount()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "阶段已达到需求人数");
+        }
+    }
+
+    private void cancelRemainingInvitesIfFull(Long stageId) {
+        Stage stage = stageService.getStage(stageId);
+        if (stage.getRequiredCount() == null) {
+            return;
+        }
+
+        long acceptedCount = stageAssignmentRepository.findByStageId(stageId)
+                .stream()
+                .filter(assignment -> assignment.getType() == StageAssignment.AssignmentType.WORK)
+                .filter(assignment -> assignment.getStatus() == StageAssignment.AssignmentStatus.WORKER_ACCEPTED)
+                .count();
+
+        if (acceptedCount < stage.getRequiredCount()) {
+            return;
+        }
+
+        List<StageAssignment> toCancel = stageAssignmentRepository.findByStageId(stageId)
+                .stream()
+                .filter(assignment -> assignment.getType() == StageAssignment.AssignmentType.WORK)
+                .filter(assignment -> assignment.getStatus() == StageAssignment.AssignmentStatus.INVITED)
+                .toList();
+
+        if (toCancel.isEmpty()) {
+            return;
+        }
+
+        toCancel.forEach(assignment -> assignment.setStatus(StageAssignment.AssignmentStatus.CANCELLED));
+        stageAssignmentRepository.saveAll(toCancel);
     }
 
     private WorkerStageCalendarResponse.StageAssignmentItem toWorkerStageAssignmentItem(

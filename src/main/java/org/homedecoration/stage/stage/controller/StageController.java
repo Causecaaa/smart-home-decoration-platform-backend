@@ -1,6 +1,7 @@
 package org.homedecoration.stage.stage.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.homedecoration.common.response.ApiResponse;
 import org.homedecoration.common.utils.JwtUtil;
@@ -12,10 +13,14 @@ import org.homedecoration.stage.stage.dto.response.StageDetailResponse;
 import org.homedecoration.stage.stage.entity.Stage;
 import org.homedecoration.stage.stage.service.GanttChartService;
 import org.homedecoration.stage.stage.service.StageService;
+import org.homedecoration.stage.assignment.dto.request.InviteWorkersRequest;
+import org.homedecoration.stage.assignment.dto.response.StageAssignmentResponse;
+import org.homedecoration.stage.assignment.service.StageAssignmentService;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/stage")
@@ -24,6 +29,7 @@ public class StageController {
     private final StageService stageService;
     private final JwtUtil jwtUtil;
     private final GanttChartService ganttChartService;
+    private final StageAssignmentService stageAssignmentService;
 
     @GetMapping("/{houseId}/getMaterials")
     public ApiResponse<HouseMaterialSummaryResponse> getMaterials(
@@ -85,16 +91,15 @@ public class StageController {
         return ApiResponse.success(null);
     }
 
-    @PostMapping("/{houseId}/{order}/update")
+    @PostMapping("/{stageId}/update")
     public ApiResponse<Void> updateStage(
-            @PathVariable Long houseId,
-            @PathVariable Integer order,
+            @PathVariable Long stageId,
             @RequestBody StageUpdateRequest stageUpdateRequest,
             HttpServletRequest request) {
 
         Long userId = jwtUtil.getUserId(request);
 
-        ganttChartService.updateStage(userId, houseId, order, stageUpdateRequest);
+        ganttChartService.updateStage(userId, stageId, stageUpdateRequest);
         return ApiResponse.success(null);
     }
 
@@ -129,6 +134,29 @@ public class StageController {
 
         stageService.AcceptStage(userId, houseId, order);
         return ApiResponse.success(null);
+    }
+
+    @PostMapping("/{stageId}/invite-workers")
+    public ApiResponse<List<StageAssignmentResponse>> inviteWorkers(
+            @PathVariable Long stageId,
+            @RequestBody @Valid InviteWorkersRequest request
+    ) {
+        List<StageAssignmentResponse> responses = stageAssignmentService.inviteWorkers(stageId, request)
+                .stream()
+                .map(StageAssignmentResponse::toDTO)
+                .toList();
+        return ApiResponse.success(responses);
+    }
+
+    @GetMapping("/{stageId}/invites")
+    public ApiResponse<List<StageAssignmentResponse>> listStageInvites(
+            @PathVariable Long stageId
+    ) {
+        List<StageAssignmentResponse> responses = stageAssignmentService.listInvitesByStage(stageId)
+                .stream()
+                .map(StageAssignmentResponse::toDTO)
+                .toList();
+        return ApiResponse.success(responses);
     }
 
 }

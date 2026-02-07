@@ -17,6 +17,8 @@ import org.homedecoration.identity.worker.entity.Worker;
 import org.homedecoration.identity.worker.repository.WorkerRepository;
 import org.homedecoration.identity.worker.worker_skill.entity.WorkerSkill;
 import org.homedecoration.identity.worker.worker_skill.repository.WorkerSkillRepository;
+import org.homedecoration.stage.stage.entity.Stage;
+import org.homedecoration.stage.stage.service.StageService;
 import org.homedecoration.stage.assignment.entity.StageAssignment;
 import org.homedecoration.stage.assignment.repository.StageAssignmentRepository;
 import org.homedecoration.stage.stage.entity.Stage;
@@ -233,6 +235,7 @@ public class WorkerService {
     }
 
 
+
     public List<Worker> findAvailableWorkerCandidates(
             WorkerSkill.WorkerType mainWorkerType,
             WorkerSkill.Level minLevel, // ✅ 新增熟练度参数
@@ -265,6 +268,7 @@ public class WorkerService {
                                     worker.getUserId(),
                                     List.of(
                                             StageAssignment.AssignmentStatus.PENDING,
+                                            StageAssignment.AssignmentStatus.WORKER_ACCEPTED,
                                             StageAssignment.AssignmentStatus.IN_PROGRESS
                                     )
                             )
@@ -322,7 +326,11 @@ public class WorkerService {
                     List<StageAssignment> assignments = stageAssignmentRepository
                             .findByWorkerIdAndStatusIn(
                                     worker.getUserId(),
-                                    List.of(StageAssignment.AssignmentStatus.PENDING, StageAssignment.AssignmentStatus.IN_PROGRESS)
+                                    List.of(
+                                            StageAssignment.AssignmentStatus.PENDING,
+                                            StageAssignment.AssignmentStatus.WORKER_ACCEPTED,
+                                            StageAssignment.AssignmentStatus.IN_PROGRESS
+                                    )
                             );
 
                     List<StageAssignment> workAssignments = assignments.stream()

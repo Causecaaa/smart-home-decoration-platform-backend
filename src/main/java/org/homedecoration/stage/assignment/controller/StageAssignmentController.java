@@ -1,8 +1,10 @@
 package org.homedecoration.stage.assignment.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.homedecoration.common.response.ApiResponse;
 import org.homedecoration.stage.assignment.dto.request.CreateStageAssignmentRequest;
+import org.homedecoration.stage.assignment.dto.request.StageInviteResponseRequest;
 import org.homedecoration.stage.assignment.dto.request.UpdateStageAssignmentRequest;
 import org.homedecoration.stage.assignment.dto.response.StageAssignmentResponse;
 import org.homedecoration.stage.assignment.entity.StageAssignment;
@@ -62,6 +64,15 @@ public class StageAssignmentController {
             @RequestBody UpdateStageAssignmentRequest request
     ) {
         StageAssignment assignment = stageAssignmentService.updateAssignment(assignmentId, request);
+        return ApiResponse.success(StageAssignmentResponse.toDTO(assignment));
+    }
+
+    @PostMapping("/{assignmentId}/respond")
+    public ApiResponse<StageAssignmentResponse> respondToInvite(
+            @PathVariable Long assignmentId,
+            @RequestBody @Valid StageInviteResponseRequest request
+    ) {
+        StageAssignment assignment = stageAssignmentService.respondToInvite(assignmentId, request);
         return ApiResponse.success(StageAssignmentResponse.toDTO(assignment));
     }
 

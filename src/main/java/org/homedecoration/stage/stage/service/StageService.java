@@ -670,7 +670,17 @@ public class StageService {
 
         List<StageAssignment> assignments = stageAssignmentRepository.findByStageId(stage.getId());
 
+
+        List<StageAssignment.AssignmentStatus> excludedStatuses = List.of(
+                StageAssignment.AssignmentStatus.INVITED,
+                StageAssignment.AssignmentStatus.WORKER_ACCEPTED,
+                StageAssignment.AssignmentStatus.WORKER_REJECTED,
+                StageAssignment.AssignmentStatus.CANCELLED
+        );
         for (StageAssignment assignment : assignments) {
+            if (excludedStatuses.contains(assignment.getStatus())) {
+                continue; // 排除这些状态
+            }
             Worker worker = assignment.getWorker();
 
             StageDetailResponse.WorkerInfo wi = new StageDetailResponse.WorkerInfo();

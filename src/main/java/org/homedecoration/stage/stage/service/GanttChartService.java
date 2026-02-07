@@ -178,11 +178,14 @@ public class GanttChartService {
         stageRepository.saveAll(stages);
     }
 
+    public Stage getStageByHouseIdAndOrder(Long houseId, Integer order) {
+        return (Stage) stageRepository.findByHouseIdAndOrder(houseId, order).orElseThrow(null);
+    }
 
     @Transactional
-    public void updateStage(Long userId, Long houseId, Integer order, StageUpdateRequest stageUpdateRequest) {
+    public void updateStage(Long userId, Long stageId, StageUpdateRequest stageUpdateRequest) {
         // 1. 查找阶段并校验权限
-        Stage stage = (Stage) stageRepository.findByHouseIdAndOrder(houseId, order).orElseThrow(null);
+        Stage stage = stageRepository.findById(stageId).orElseThrow();
         House house = stage.getHouse();
         if (!house.getUser().getId().equals(userId)) {
             throw new SecurityException("无权限修改");
