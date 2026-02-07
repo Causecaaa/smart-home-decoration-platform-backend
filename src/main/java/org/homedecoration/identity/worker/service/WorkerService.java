@@ -17,10 +17,10 @@ import org.homedecoration.identity.worker.entity.Worker;
 import org.homedecoration.identity.worker.repository.WorkerRepository;
 import org.homedecoration.identity.worker.worker_skill.entity.WorkerSkill;
 import org.homedecoration.identity.worker.worker_skill.repository.WorkerSkillRepository;
-import org.homedecoration.stage.stage.entity.Stage;
-import org.homedecoration.stage.stage.service.StageService;
 import org.homedecoration.stage.assignment.entity.StageAssignment;
 import org.homedecoration.stage.assignment.repository.StageAssignmentRepository;
+import org.homedecoration.stage.stage.entity.Stage;
+import org.homedecoration.stage.stage.service.StageService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -144,6 +144,42 @@ public class WorkerService {
                 .toList();
     }
 
+    public LaborMarketResponse getLaborMarketResponse(Long stageId, WorkerSkill.Level minLevel, Pageable pageable) {
+        Stage stage = stageService.getStage(stageId);
+        if (stage.getExpectedStartAt() == null) {
+            throw new IllegalStateException("阶段未设置预计开始时间");
+        }
+        if (stage.getEstimatedDay() == null) {
+            throw new IllegalStateException("阶段未设置预计工期");
+        }
+
+        String city = stage.getHouse().getCity();
+        LocalDateTime expectedStartAt = stage.getExpectedStartAt();
+        LocalDateTime expectedEndAt = expectedStartAt.plusDays(stage.getEstimatedDay());
+
+        Page<WorkerResponse> availableWorkers = findAvailableWorkersForSelection(
+                stage.getMainWorkerType(),
+                minLevel,
+                city,
+                expectedStartAt,
+                expectedEndAt,
+                pageable
+        );
+
+        LaborMarketResponse response = new LaborMarketResponse();
+        response.setStageId(stage.getId());
+        response.setMainWorkerType(stage.getMainWorkerType().name());
+        response.setRequiredCount(stage.getRequiredCount());
+        response.setExpectedStartAt(expectedStartAt.toString());
+        response.setEstimatedDay(stage.getEstimatedDay());
+        response.setPage(availableWorkers.getNumber());
+        response.setSize(availableWorkers.getSize());
+        response.setTotalPages(availableWorkers.getTotalPages());
+        response.setTotalElements(availableWorkers.getTotalElements());
+        response.setWorkers(availableWorkers.getContent());
+        return response;
+    }
+
     public Page<WorkerResponse> findAvailableWorkersForSelection(
             WorkerSkill.WorkerType mainWorkerType,
             WorkerSkill.Level minLevel,
@@ -194,38 +230,6 @@ public class WorkerService {
                 .toList();
 
         return new PageImpl<>(responseList, pageable, candidates.size());
-    }
-
-    public LaborMarketResponse getLaborMarketResponse(Long stageId, WorkerSkill.Level minLevel, Pageable pageable) {
-        Stage stage = stageService.getStage(stageId);
-        if (stage.getExpectedStartAt() == null) {
-            throw new IllegalStateException("阶段未设置预计开始时间");
-        }
-        if (stage.getEstimatedDay() == null) {
-            throw new IllegalStateException("阶段未设置预计工期");
-        }
-
-        String city = stage.getHouse().getCity();
-        LocalDateTime expectedStartAt = stage.getExpectedStartAt();
-        LocalDateTime expectedEndAt = expectedStartAt.plusDays(stage.getEstimatedDay());
-
-        Page<WorkerResponse> availableWorkers = findAvailableWorkersForSelection(
-                stage.getMainWorkerType(),
-                minLevel,
-                city,
-                expectedStartAt,
-                expectedEndAt,
-                pageable
-        );
-
-        LaborMarketResponse response = new LaborMarketResponse();
-        response.setStageId(stage.getId());
-        response.setMainWorkerType(stage.getMainWorkerType().name());
-        response.setRequiredCount(stage.getRequiredCount());
-        response.setExpectedStartAt(expectedStartAt.toString());
-        response.setEstimatedDay(stage.getEstimatedDay());
-        response.setWorkers(availableWorkers.getContent());
-        return response;
     }
 
 

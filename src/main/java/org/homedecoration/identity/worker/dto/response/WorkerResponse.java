@@ -14,6 +14,11 @@ public class WorkerResponse {
     private String email;
     private String realName;
 
+    private Integer page;
+    private Integer size;
+    private Integer totalPages;
+    private Long totalElements;
+
     private BigDecimal rating;
     private WorkerSkill.Level level;
 
