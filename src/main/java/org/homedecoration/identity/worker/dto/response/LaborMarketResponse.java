@@ -12,6 +12,7 @@ public class LaborMarketResponse {
     private Integer requiredCount; // 所需人数
     private String expectedStartAt;
     private Integer estimatedDay;  // 预计天数
+    private Boolean canEdit;
 
     private Integer page;
     private Integer size;
