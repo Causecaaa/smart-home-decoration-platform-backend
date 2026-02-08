@@ -13,10 +13,4 @@ public class CreateStageAssignmentRequest {
     private LocalDateTime expectedEndAt;
 
     private StageAssignment.AssignmentStatus status;
-//    AssignmentStatus {
-//        PENDING,
-//        IN_PROGRESS,
-//        COMPLETED,
-//        CANCELLED
-//    }
 }
