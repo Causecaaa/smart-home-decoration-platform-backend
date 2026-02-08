@@ -16,6 +16,7 @@ import org.homedecoration.stage.stage.service.StageService;
 import org.homedecoration.stage.assignment.dto.request.InviteWorkersRequest;
 import org.homedecoration.stage.assignment.dto.response.StageAssignmentResponse;
 import org.homedecoration.stage.assignment.service.StageAssignmentService;
+import org.homedecoration.identity.worker.dto.response.WorkerOrderResponse;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -157,6 +158,15 @@ public class StageController {
                 .map(StageAssignmentResponse::toDTO)
                 .toList();
         return ApiResponse.success(responses);
+    }
+
+    @GetMapping("/{stageId}/worker-order")
+    public ApiResponse<WorkerOrderResponse> getWorkerOrder(
+            @PathVariable Long stageId,
+            HttpServletRequest request
+    ) {
+        Long userId = jwtUtil.getUserId(request);
+        return ApiResponse.success(stageAssignmentService.getWorkerOrder(stageId, userId));
     }
 
 }

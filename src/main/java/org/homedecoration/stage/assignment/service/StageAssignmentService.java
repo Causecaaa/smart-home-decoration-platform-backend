@@ -3,11 +3,15 @@ package org.homedecoration.stage.assignment.service;
 import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.homedecoration.bill.dto.response.BillResponse;
+import org.homedecoration.bill.entity.Bill;
+import org.homedecoration.bill.repository.BillRepository;
 import org.homedecoration.house.entity.House;
 import org.homedecoration.house.service.HouseService;
 import org.homedecoration.identity.worker.LeaveRecord.LeaveRecord;
 import org.homedecoration.identity.worker.LeaveRecord.LeaveRecordRepository;
 import org.homedecoration.identity.worker.dto.request.LeaveRequest;
+import org.homedecoration.identity.worker.dto.response.WorkerOrderResponse;
 import org.homedecoration.identity.worker.dto.response.WorkerSimpleResponse;
 import org.homedecoration.identity.worker.entity.Worker;
 import org.homedecoration.identity.worker.service.WorkerService;
@@ -33,6 +37,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -48,6 +53,7 @@ public class StageAssignmentService {
     private final LeaveRecordRepository leaveRecordRepository;
     private final HouseLayoutRepository houseLayoutRepository;
     private final HouseLayoutImageRepository houseLayoutImageRepository;
+    private final BillRepository billRepository;
 
     public StageAssignment createAssignment(CreateStageAssignmentRequest request) {
         if (request.getStageId() == null || request.getWorkerId() == null) {
@@ -86,6 +92,16 @@ public class StageAssignmentService {
         return stageAssignmentRepository.findByWorkerId(
                 workerId
         );
+    }
+
+    public List<StageAssignment> listInvitesByWorkerId(Long workerId) {
+        return stageAssignmentRepository.findByWorkerIdAndStatusIn(
+                        workerId,
+                        List.of(StageAssignment.AssignmentStatus.INVITED)
+                )
+                .stream()
+                .filter(assignment -> assignment.getType() == StageAssignment.AssignmentType.WORK)
+                .toList();
     }
 
     // 文件路径: D:\CODE\home_decoration_backend\src\main\java\org\homedecoration\stage\assignment\service\StageAssignmentService.java
@@ -223,6 +239,19 @@ public class StageAssignmentService {
     @Transactional
     public StageAssignment respondToInvite(Long assignmentId, StageInviteResponseRequest request) {
         StageAssignment assignment = getAssignment(assignmentId);
+        return respondToInviteInternal(assignment, request);
+    }
+
+    @Transactional
+    public StageAssignment respondToInviteAsWorker(Long assignmentId, Long workerId, StageInviteResponseRequest request) {
+        StageAssignment assignment = getAssignment(assignmentId);
+        if (!assignment.getWorkerId().equals(workerId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "无权限响应该邀请");
+        }
+        return respondToInviteInternal(assignment, request);
+    }
+
+    private StageAssignment respondToInviteInternal(StageAssignment assignment, StageInviteResponseRequest request) {
         if (assignment.getStatus() != StageAssignment.AssignmentStatus.INVITED) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "当前邀请不可响应");
         }
@@ -289,12 +318,86 @@ public class StageAssignmentService {
                 .filter(assignment -> assignment.getStatus() == StageAssignment.AssignmentStatus.INVITED)
                 .toList();
 
-        if (toCancel.isEmpty()) {
+        if (!toCancel.isEmpty()) {
+            toCancel.forEach(assignment -> assignment.setStatus(StageAssignment.AssignmentStatus.CANCELLED));
+            stageAssignmentRepository.saveAll(toCancel);
+        }
+
+        createWageBillIfNeeded(stageId);
+    }
+
+    private void createWageBillIfNeeded(Long stageId) {
+        if (billRepository.existsByBizTypeAndBizId(Bill.BizType.WAGE, stageId)) {
+            return;
+        }
+        Stage stage = stageService.getStage(stageId);
+        if (stage.getEstimatedDay() == null) {
             return;
         }
 
-        toCancel.forEach(assignment -> assignment.setStatus(StageAssignment.AssignmentStatus.CANCELLED));
-        stageAssignmentRepository.saveAll(toCancel);
+        List<StageAssignment> acceptedAssignments = stageAssignmentRepository.findByStageId(stageId)
+                .stream()
+                .filter(assignment -> assignment.getType() == StageAssignment.AssignmentType.WORK)
+                .filter(assignment -> assignment.getStatus() == StageAssignment.AssignmentStatus.WORKER_ACCEPTED)
+                .toList();
+
+        if (acceptedAssignments.isEmpty()) {
+            return;
+        }
+
+        BigDecimal totalAmount = acceptedAssignments.stream()
+                .map(assignment -> {
+                    BigDecimal dailyWage = assignment.getDailyWage() == null
+                            ? BigDecimal.ZERO
+                            : assignment.getDailyWage();
+                    return dailyWage.multiply(BigDecimal.valueOf(stage.getEstimatedDay()));
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        Bill bill = new Bill();
+        bill.setBizType(Bill.BizType.WAGE);
+        bill.setBizId(stageId);
+        bill.setAmount(totalAmount);
+        bill.setDepositAmount(BigDecimal.ZERO);
+        bill.setPayStatus(Bill.PayStatus.UNPAID);
+        House house = houseService.getHouseById(stage.getHouseId());
+        bill.setPayerId(house.getUser().getId());
+        bill.setPayeeId(0L);
+        bill.setRemark("阶段工人工资账单");
+        billRepository.save(bill);
+    }
+
+    public WorkerOrderResponse getWorkerOrder(Long stageId, Long userId) {
+        Stage stage = stageService.getStage(stageId);
+        House house = houseService.getHouseById(stage.getHouseId());
+        if (!house.getUser().getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "无权限查看该阶段工人信息");
+        }
+
+        List<WorkerSimpleResponse> workers = stageAssignmentRepository.findByStageId(stageId)
+                .stream()
+                .filter(assignment -> assignment.getType() == StageAssignment.AssignmentType.WORK)
+                .filter(assignment -> assignment.getStatus() == StageAssignment.AssignmentStatus.WORKER_ACCEPTED
+                        || assignment.getStatus() == StageAssignment.AssignmentStatus.IN_PROGRESS
+                        || assignment.getStatus() == StageAssignment.AssignmentStatus.INVITED)
+                .map(assignment -> {
+                    WorkerSimpleResponse response = workerService.getSimpleResponse(assignment.getWorkerId());
+                    response.setDaily_wage(
+                            assignment.getDailyWage() == null ? 0 : assignment.getDailyWage().doubleValue()
+                    );
+                    response.setStatus(assignment.getStatus());
+                    response.setExpected_Start_at(assignment.getExpectedStartAt().toLocalDate());
+                    response.setExpected_End_at(assignment.getExpectedEndAt().toLocalDate().minusDays(1));
+                    return response;
+                })
+                .toList();
+
+        WorkerOrderResponse response = new WorkerOrderResponse();
+        response.setWorkers(workers);
+        billRepository.findByBizTypeAndBizId(Bill.BizType.WAGE, stageId)
+                .map(BillResponse::toDTO)
+                .ifPresent(response::setBill);
+        return response;
     }
 
     private WorkerStageCalendarResponse.StageAssignmentItem toWorkerStageAssignmentItem(

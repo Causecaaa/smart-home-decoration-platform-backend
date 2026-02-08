@@ -12,6 +12,7 @@ import org.homedecoration.identity.worker.dto.response.*;
 import org.homedecoration.identity.worker.entity.Worker;
 import org.homedecoration.identity.worker.service.WorkerService;
 import org.homedecoration.identity.worker.worker_skill.entity.WorkerSkill;
+import org.homedecoration.stage.assignment.dto.request.StageInviteResponseRequest;
 import org.homedecoration.stage.assignment.dto.response.StageAssignmentResponse;
 import org.homedecoration.stage.assignment.service.StageAssignmentService;
 import org.springframework.data.domain.Page;
@@ -105,6 +106,30 @@ public class WorkerController {
                 .map(StageAssignmentResponse::toDTO)
                 .toList();
         return ApiResponse.success(responses);
+    }
+
+    @GetMapping("/invites")
+    public ApiResponse<List<StageAssignmentResponse>> listInvites(HttpServletRequest request) {
+        Long userId = jwtUtil.getUserId(request);
+        List<StageAssignmentResponse> responses = stageAssignmentService
+                .listInvitesByWorkerId(userId)
+                .stream()
+                .map(StageAssignmentResponse::toDTO)
+                .toList();
+        return ApiResponse.success(responses);
+    }
+
+    @PostMapping("/invites/{assignmentId}/respond")
+    public ApiResponse<StageAssignmentResponse> respondInvite(
+            HttpServletRequest request,
+            @PathVariable Long assignmentId,
+            @Valid @RequestBody StageInviteResponseRequest body) {
+        Long userId = jwtUtil.getUserId(request);
+        return ApiResponse.success(
+                StageAssignmentResponse.toDTO(
+                        stageAssignmentService.respondToInviteAsWorker(assignmentId, userId, body)
+                )
+        );
     }
 
     @GetMapping("/calendar")
