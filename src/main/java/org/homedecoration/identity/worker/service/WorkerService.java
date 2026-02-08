@@ -249,6 +249,42 @@ public class WorkerService {
         return new PageImpl<>(responseList, pageable, candidates.size());
     }
 
+    public LaborMarketResponse getLaborMarketResponse(Long stageId, WorkerSkill.Level minLevel, Pageable pageable) {
+        Stage stage = stageService.getStage(stageId);
+        if (stage.getExpectedStartAt() == null) {
+            throw new IllegalStateException("阶段未设置预计开始时间");
+        }
+        if (stage.getEstimatedDay() == null) {
+            throw new IllegalStateException("阶段未设置预计工期");
+        }
+
+        String city = stage.getHouse().getCity();
+        LocalDateTime expectedStartAt = stage.getExpectedStartAt();
+        LocalDateTime expectedEndAt = expectedStartAt.plusDays(stage.getEstimatedDay());
+
+        Page<WorkerResponse> availableWorkers = findAvailableWorkersForSelection(
+                stage.getMainWorkerType(),
+                minLevel,
+                city,
+                expectedStartAt,
+                expectedEndAt,
+                pageable
+        );
+
+        LaborMarketResponse response = new LaborMarketResponse();
+        response.setStageId(stage.getId());
+        response.setMainWorkerType(stage.getMainWorkerType().name());
+        response.setRequiredCount(stage.getRequiredCount());
+        response.setExpectedStartAt(expectedStartAt.toString());
+        response.setEstimatedDay(stage.getEstimatedDay());
+        response.setPage(availableWorkers.getNumber());
+        response.setSize(availableWorkers.getSize());
+        response.setTotalPages(availableWorkers.getTotalPages());
+        response.setTotalElements(availableWorkers.getTotalElements());
+        response.setWorkers(availableWorkers.getContent());
+        return response;
+    }
+
 
 
     public List<Worker> findAvailableWorkerCandidates(
