@@ -21,8 +21,6 @@ import org.homedecoration.stage.stage.entity.Stage;
 import org.homedecoration.stage.stage.service.StageService;
 import org.homedecoration.stage.assignment.entity.StageAssignment;
 import org.homedecoration.stage.assignment.repository.StageAssignmentRepository;
-import org.homedecoration.stage.stage.entity.Stage;
-import org.homedecoration.stage.stage.service.StageService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -166,6 +165,20 @@ public class WorkerService {
                 expectedStartAt,
                 expectedEndAt,
                 pageable
+        );
+        Map<Long, StageAssignment.AssignmentStatus> assignmentStatusByWorkerId = stageAssignmentRepository
+                .findByStageId(stageId)
+                .stream()
+                .filter(assignment -> assignment.getStatus() == StageAssignment.AssignmentStatus.INVITED
+                        || assignment.getStatus() == StageAssignment.AssignmentStatus.WORKER_ACCEPTED
+                        || assignment.getStatus() == StageAssignment.AssignmentStatus.WORKER_REJECTED)
+                .collect(Collectors.toMap(
+                        StageAssignment::getWorkerId,
+                        StageAssignment::getStatus,
+                        (existing, replacement) -> existing
+                ));
+        availableWorkers.getContent().forEach(workerResponse ->
+                workerResponse.setStatus(assignmentStatusByWorkerId.get(workerResponse.getUserId()))
         );
 
         LaborMarketResponse response = new LaborMarketResponse();

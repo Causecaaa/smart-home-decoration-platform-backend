@@ -2,6 +2,7 @@ package org.homedecoration.identity.worker.dto.response;
 
 import lombok.Data;
 import org.homedecoration.identity.worker.worker_skill.entity.WorkerSkill;
+import org.homedecoration.stage.assignment.entity.StageAssignment;
 
 import java.math.BigDecimal;
 
@@ -21,5 +22,6 @@ public class WorkerResponse {
 
     private BigDecimal rating;
     private WorkerSkill.Level level;
+    private StageAssignment.AssignmentStatus status;
 
 }
