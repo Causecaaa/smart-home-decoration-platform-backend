@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 public class StageAssignmentResponse {
     private Long id;
     private Long stageId;
+    private String stageName;
     private Long workerId;
     private BigDecimal dailyWage;
     private LocalDateTime expectedStartAt;
@@ -22,6 +23,9 @@ public class StageAssignmentResponse {
         StageAssignmentResponse dto = new StageAssignmentResponse();
         dto.setId(assignment.getId());
         dto.setStageId(assignment.getStageId());
+        if(assignment.getStage() != null){
+            dto.setStageName(assignment.getStage().getStageName());
+        }
         dto.setWorkerId(assignment.getWorkerId());
         dto.setDailyWage(assignment.getDailyWage());
         dto.setExpectedStartAt(assignment.getExpectedStartAt());

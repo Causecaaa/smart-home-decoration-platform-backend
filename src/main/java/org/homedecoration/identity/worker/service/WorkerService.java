@@ -383,4 +383,7 @@ public class WorkerService {
     }
 
 
+    public Worker getWorkerById(Long userId) {
+        return workerRepository.findById(userId).orElseThrow();
+    }
 }

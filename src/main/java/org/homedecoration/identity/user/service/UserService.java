@@ -1,6 +1,7 @@
 package org.homedecoration.identity.user.service;
 
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.homedecoration.common.exception.BusinessException;
 import org.homedecoration.common.utils.JwtUtil;
 import org.homedecoration.identity.user.dto.request.ChangePasswordRequest;
@@ -10,6 +11,9 @@ import org.homedecoration.identity.user.dto.response.LoginResponse;
 import org.homedecoration.identity.user.dto.response.UserResponse;
 import org.homedecoration.identity.user.entity.User;
 import org.homedecoration.identity.user.repository.UserRepository;
+import org.homedecoration.identity.worker.dto.response.WorkerInfoResponse;
+import org.homedecoration.identity.worker.entity.Worker;
+import org.homedecoration.identity.worker.repository.WorkerRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,6 +26,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
     @Value("${file.upload-dir}")
@@ -30,14 +35,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-
-    public UserService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder,
-                       JwtUtil jwtUtil) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtUtil = jwtUtil;
-    }
+    private final WorkerRepository workerRepository;
 
     public List<User> getAll() {
         return userRepository.findAll();
@@ -105,6 +103,11 @@ public class UserService {
         LoginResponse response = new LoginResponse();
         response.setToken(token);
         response.setUser(UserResponse.toDTO(user));
+
+        if(user.getRole() == User.Role.WORKER){
+            Worker worker = workerRepository.findById(user.getId()).orElseThrow();
+            response.setWorker(WorkerInfoResponse.toDTO(worker));
+        }
 
         return response;
     }

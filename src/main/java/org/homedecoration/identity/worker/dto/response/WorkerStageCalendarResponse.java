@@ -26,6 +26,7 @@ public class WorkerStageCalendarResponse {
 
         private Long stageId;
         private String stageName;
+        private Boolean canLeave = true;
 
         private Long houseId;
         private String city;

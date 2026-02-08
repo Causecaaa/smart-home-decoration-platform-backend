@@ -60,6 +60,9 @@ public class StageAssignment {
     @Column(name = "end_at")
     private LocalDateTime endAt;
 
+    @Column(name = "can_leave", nullable = false, columnDefinition = "boolean default true")
+    private Boolean canLeave;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private AssignmentStatus status = AssignmentStatus.PENDING;

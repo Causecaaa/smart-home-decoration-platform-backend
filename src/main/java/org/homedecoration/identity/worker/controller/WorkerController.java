@@ -109,24 +109,24 @@ public class WorkerController {
     }
 
     @GetMapping("/invites")
-    public ApiResponse<List<StageAssignmentResponse>> listInvites(HttpServletRequest request) {
+    public ApiResponse<List<InvitesResponse>> listInvites(HttpServletRequest request) {
         Long userId = jwtUtil.getUserId(request);
-        List<StageAssignmentResponse> responses = stageAssignmentService
+        List<InvitesResponse> responses = stageAssignmentService
                 .listInvitesByWorkerId(userId)
                 .stream()
-                .map(StageAssignmentResponse::toDTO)
+                .map(stageAssignmentService::toInviteResponse)
                 .toList();
         return ApiResponse.success(responses);
     }
 
     @PostMapping("/invites/{assignmentId}/respond")
-    public ApiResponse<StageAssignmentResponse> respondInvite(
+    public ApiResponse<InvitesResponse> respondInvite(
             HttpServletRequest request,
             @PathVariable Long assignmentId,
             @Valid @RequestBody StageInviteResponseRequest body) {
         Long userId = jwtUtil.getUserId(request);
         return ApiResponse.success(
-                StageAssignmentResponse.toDTO(
+                stageAssignmentService.toInviteResponse(
                         stageAssignmentService.respondToInviteAsWorker(assignmentId, userId, body)
                 )
         );

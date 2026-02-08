@@ -7,15 +7,18 @@ import org.homedecoration.bill.dto.response.BillResponse;
 import org.homedecoration.bill.entity.Bill;
 import org.homedecoration.bill.repository.BillRepository;
 import org.homedecoration.house.entity.House;
+import org.homedecoration.house.dto.response.HouseResponse;
 import org.homedecoration.house.service.HouseService;
 import org.homedecoration.identity.worker.LeaveRecord.LeaveRecord;
 import org.homedecoration.identity.worker.LeaveRecord.LeaveRecordRepository;
 import org.homedecoration.identity.worker.dto.request.LeaveRequest;
+import org.homedecoration.identity.worker.dto.response.InvitesResponse;
 import org.homedecoration.identity.worker.dto.response.WorkerOrderResponse;
 import org.homedecoration.identity.worker.dto.response.WorkerSimpleResponse;
 import org.homedecoration.identity.worker.entity.Worker;
 import org.homedecoration.identity.worker.service.WorkerService;
 import org.homedecoration.identity.worker.dto.response.WorkerStageCalendarResponse;
+import org.homedecoration.identity.user.dto.response.UserResponse;
 import org.homedecoration.layout.entity.HouseLayout;
 import org.homedecoration.layout.repository.HouseLayoutRepository;
 import org.homedecoration.layoutImage.entity.HouseLayoutImage;
@@ -24,6 +27,7 @@ import org.homedecoration.stage.assignment.dto.request.CreateStageAssignmentRequ
 import org.homedecoration.stage.assignment.dto.request.InviteWorkersRequest;
 import org.homedecoration.stage.assignment.dto.request.StageInviteResponseRequest;
 import org.homedecoration.stage.assignment.dto.request.UpdateStageAssignmentRequest;
+import org.homedecoration.stage.assignment.dto.response.StageAssignmentResponse;
 import org.homedecoration.stage.assignment.entity.StageAssignment;
 import org.homedecoration.stage.assignment.repository.StageAssignmentRepository;
 import org.homedecoration.stage.stage.dto.response.HouseStageMaterialsResponse;
@@ -97,7 +101,8 @@ public class StageAssignmentService {
     public List<StageAssignment> listInvitesByWorkerId(Long workerId) {
         return stageAssignmentRepository.findByWorkerIdAndStatusIn(
                         workerId,
-                        List.of(StageAssignment.AssignmentStatus.INVITED)
+                        List.of(StageAssignment.AssignmentStatus.INVITED,
+                                StageAssignment.AssignmentStatus.WORKER_ACCEPTED)
                 )
                 .stream()
                 .filter(assignment -> assignment.getType() == StageAssignment.AssignmentType.WORK)
@@ -225,6 +230,7 @@ public class StageAssignmentService {
                     assignment.setDailyWage(request.getDailyWage());
                     assignment.setStatus(StageAssignment.AssignmentStatus.INVITED);
                     assignment.setType(StageAssignment.AssignmentType.WORK);
+                    assignment.setCanLeave(false);
                     return assignment;
                 })
                 .toList();
@@ -249,6 +255,16 @@ public class StageAssignmentService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "无权限响应该邀请");
         }
         return respondToInviteInternal(assignment, request);
+    }
+
+    public InvitesResponse toInviteResponse(StageAssignment assignment) {
+        Stage stage = stageService.getStage(assignment.getStageId());
+        House house = houseService.getHouseById(stage.getHouseId());
+        InvitesResponse response = new InvitesResponse();
+        response.setAssignment(StageAssignmentResponse.toDTO(assignment));
+        response.setHouse(HouseResponse.toDTO(house));
+        response.setEmployer(UserResponse.toDTO(house.getUser()));
+        return response;
     }
 
     private StageAssignment respondToInviteInternal(StageAssignment assignment, StageInviteResponseRequest request) {
@@ -415,6 +431,7 @@ public class StageAssignmentService {
         item.setStatus(assignment.getStatus());
 
         Stage stage = stageService.getStage(assignment.getStageId());
+        Boolean isLoose = stage.getHouse().getDecorationType() == House.DecorationType.LOOSE;
         item.setStageId(stage.getId());
         item.setStageName(stage.getStageName());
 
@@ -426,15 +443,19 @@ public class StageAssignmentService {
         item.setUnitNo(house.getUnitNo());
         item.setRoomNo(house.getRoomNo());
         item.setArea(house.getArea());
+        item.setCanLeave(assignment.getCanLeave());
 
-        HouseLayout layout = (HouseLayout) houseLayoutRepository.findByHouseIdAndLayoutStatus(house.getId(), HouseLayout.LayoutStatus.CONFIRMED)
-                .orElseThrow(() -> new RuntimeException("无确认布局"));
-        HouseLayoutImage designingImageUrl = houseLayoutImageRepository.findByLayoutIdAndImageType(layout.getId(), HouseLayoutImage.ImageType.FINAL);
-        item.setDesignation_image_url(designingImageUrl.getImageUrl());
+        if(!isLoose){
+            HouseLayout layout = (HouseLayout) houseLayoutRepository.findByHouseIdAndLayoutStatus(house.getId(), HouseLayout.LayoutStatus.CONFIRMED)
+                    .orElseThrow(() -> new RuntimeException("无确认布局"));
+            HouseLayoutImage designingImageUrl = houseLayoutImageRepository.findByLayoutIdAndImageType(layout.getId(), HouseLayoutImage.ImageType.FINAL);
+            item.setDesignation_image_url(designingImageUrl.getImageUrl());
+        }
 
         List<WorkerSimpleResponse> coworkers = stageAssignmentRepository.findByStageId(stage.getId())
                 .stream()
-                .filter(stageAssignment -> stageAssignment.getStatus() != StageAssignment.AssignmentStatus.CANCELLED)
+                .filter(stageAssignment ->
+                        stageAssignment.getStatus() != StageAssignment.AssignmentStatus.CANCELLED)
                 .filter(stageAssignment -> !stageAssignment.getWorkerId().equals(workerId)) // 排除当前工人
                 .map(stageAssignment -> {
                     WorkerSimpleResponse coworker = workerService.getSimpleResponse(stageAssignment.getWorkerId());

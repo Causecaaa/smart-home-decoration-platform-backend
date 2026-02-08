@@ -5,6 +5,8 @@ import org.homedecoration.bill.dto.request.CreateBillRequest;
 import org.homedecoration.bill.entity.Bill;
 import org.homedecoration.bill.repository.BillRepository;
 import org.homedecoration.common.exception.BusinessException;
+import org.homedecoration.stage.assignment.entity.StageAssignment;
+import org.homedecoration.stage.assignment.repository.StageAssignmentRepository;
 import org.homedecoration.stage.stage.service.StageService;
 import org.homedecoration.furniture.furnitureScheme.repository.FurnitureSchemeRepository;
 import org.homedecoration.layout.repository.HouseLayoutRepository;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -25,6 +28,7 @@ public class BillService {
     private final FurnitureSchemeRepository furnitureSchemeRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final StageService stageService;
+    private final StageAssignmentRepository stageAssignmentRepository;
 
 
     public Bill getBill(Bill.BizType bizType, Long bizId) {
@@ -228,6 +232,17 @@ public class BillService {
 
             if (bill.getBizType() == Bill.BizType.CONSTRUCTION) {
                 stageService.createStagesAsync(bill.getBizId());
+            }
+
+            if (bill.getBizType() == Bill.BizType.WAGE) {
+                List<StageAssignment> assignments =
+                        stageAssignmentRepository.findByStageId(bill.getBizId());
+
+                assignments.stream()
+                        .filter(a -> a.getStatus() == StageAssignment.AssignmentStatus.WORKER_ACCEPTED)
+                        .forEach(a -> a.setStatus(StageAssignment.AssignmentStatus.PENDING));
+
+                stageAssignmentRepository.saveAll(assignments);
             }
 
 
