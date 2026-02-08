@@ -13,7 +13,8 @@ public class WorkerSimpleResponse {
     private String email;
     private String realName;
 
-    private LocalDate expected_Start_at; // 新增
-    private LocalDate expected_End_at; // 新增
+    private double daily_wage;
+    private LocalDate expected_Start_at;
+    private LocalDate expected_End_at;
 
 }

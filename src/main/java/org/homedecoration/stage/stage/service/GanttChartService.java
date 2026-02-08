@@ -2,8 +2,11 @@ package org.homedecoration.stage.stage.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.homedecoration.common.exception.BusinessException;
 import org.homedecoration.house.entity.House;
 import org.homedecoration.house.repository.HouseRepository;
+import org.homedecoration.stage.assignment.entity.StageAssignment;
+import org.homedecoration.stage.assignment.repository.StageAssignmentRepository;
 import org.homedecoration.stage.assignment.service.StageAssignmentService;
 import org.homedecoration.stage.stage.dto.request.StageUpdateRequest;
 import org.homedecoration.stage.stage.dto.response.HouseStageResponse;
@@ -26,6 +29,7 @@ public class GanttChartService {
     private final StageRepository stageRepository;
     private final StageAssignmentService stageAssignmentService;
     private final HouseRepository houseRepository;
+    private final StageAssignmentRepository stageAssignmentRepository;
 
     private static final String CACHE_PREFIX = "stage:";
     private final RedisTemplate<String, Object> redisTemplate;
@@ -122,61 +126,113 @@ public class GanttChartService {
     }
 
 
-    public void updateExpectedStartAt(Long houseId, int order, LocalDateTime userInputStart) {
-        // 按顺序获取所有阶段
-        List<Stage> stages = stageRepository.findByHouseIdOrderByOrderAsc(houseId);
+    @Transactional
+    public void updateExpectedStartAt(
+            Long houseId,
+            int order,
+            LocalDateTime userInputStart
+    ) {
+        // ---------- 0️⃣ 基础数据 ----------
         House house = getHouseById(houseId);
         boolean isLoose = house.getDecorationType() == House.DecorationType.LOOSE;
 
-        // ---------- 1️⃣ 校验是否早于最早可开始时间 ----------
-        LocalDateTime earliest = null;
+        List<Stage> stages = stageRepository.findByHouseIdOrderByOrderAsc(houseId);
+
+        Stage target = stages.stream()
+                .filter(s -> s.getOrder() == order)
+                .findFirst()
+                .orElseThrow(() -> new BusinessException("阶段不存在"));
+
+        // ---------- 1️⃣ 校验：散装装修 + 当前阶段已有人 ----------
+        if (isLoose && hasAssignments(target)) {
+            throw new BusinessException("该阶段已有工人参与，无法修改时间");
+        }
+
+        // ---------- 2️⃣ 校验：最早可开始时间 ----------
+        LocalDateTime earliestStart = calcEarliestStart(stages, order);
+        if (earliestStart != null && userInputStart.isBefore(earliestStart)) {
+            throw new BusinessException("预计开始时间不能早于 " + earliestStart);
+        }
+
+        // ---------- 3️⃣ 校验：散装装修下，是否会与后续阶段人员冲突 ----------
+        if (isLoose) {
+            validateNoAssignmentConflict(stages, target, userInputStart);
+        }
+
+        // ---------- 4️⃣ 正式修改：目标阶段 ----------
+        target.setExpectedStartAt(userInputStart);
+
+        // ---------- 5️⃣ 正式修改：顺延后续阶段 ----------
+        LocalDateTime prevEnd = userInputStart.plusDays(target.getEstimatedDay());
+
+        for (Stage stage : stages) {
+            if (stage.getOrder() <= order) continue;
+
+            LocalDateTime stageStart = stage.getExpectedStartAt();
+            if (stageStart == null || !stageStart.isAfter(prevEnd)) {
+                stage.setExpectedStartAt(prevEnd);
+            }
+            prevEnd = stage.getExpectedStartAt().plusDays(stage.getEstimatedDay());
+        }
+
+        // ---------- 6️⃣ 持久化 ----------
+        stageRepository.saveAll(stages);
+
+        // ---------- 7️⃣ 当前阶段联动预约（非散装） ----------
+        Stage current = getCurrentStage(houseId);
+        if (!isLoose && current.getOrder().equals(order)) {
+            stageAssignmentService.updateAssignmentsForStage(
+                    current.getId(),
+                    userInputStart
+            );
+        }
+    }
+
+    private LocalDateTime calcEarliestStart(List<Stage> stages, int order) {
+        LocalDateTime cursor = null;
+
         for (Stage stage : stages) {
             if (stage.getOrder() >= order) break;
 
             if (stage.getExpectedStartAt() != null) {
-                earliest = stage.getExpectedStartAt().plusDays(stage.getEstimatedDay());
-            } else if (earliest != null) {
-                earliest = earliest.plusDays(stage.getEstimatedDay());
+                cursor = stage.getExpectedStartAt().plusDays(stage.getEstimatedDay());
+            } else if (cursor != null) {
+                cursor = cursor.plusDays(stage.getEstimatedDay());
             }
         }
-
-        if (earliest != null && userInputStart.isBefore(earliest)) {
-            throw new RuntimeException("预计开始时间不能早于最早可开始时间 " + earliest);
-        }
-
-        // ---------- 2️⃣ 更新目标阶段 ----------
-        Stage target = stages.stream()
-                .filter(s -> s.getOrder() == order)
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("阶段不存在"));
-
-        target.setExpectedStartAt(userInputStart);
-
-        // ---------- 3️⃣ 向后调整冲突阶段 ----------
-        LocalDateTime prevEnd = userInputStart.plusDays(target.getEstimatedDay());
-        for (Stage nextStage : stages) {
-            if (nextStage.getOrder() <= order) continue; // 跳过之前阶段
-
-            LocalDateTime nextStart = nextStage.getExpectedStartAt();
-            if (nextStart == null || !nextStart.isAfter(prevEnd)) {
-                // 如果后续阶段为空或开始时间早于前一阶段结束，则推后
-                nextStage.setExpectedStartAt(prevEnd);
-            }
-            // 更新 prevEnd
-            prevEnd = nextStage.getExpectedStartAt().plusDays(nextStage.getEstimatedDay());
-        }
-
-        Stage current = getCurrentStage(houseId);
-        boolean isCurrentStage = current.getOrder().equals(order);
-
-        if (isCurrentStage && !isLoose) {
-            // 只触发通知/调用 assignmentService 去更新预约时间
-            stageAssignmentService.updateAssignmentsForStage(current.getId(), userInputStart);
-        }
-
-        // ---------- 4️⃣ 批量保存 ----------
-        stageRepository.saveAll(stages);
+        return cursor;
     }
+
+    private boolean hasAssignments(Stage stage) {
+        return stageAssignmentRepository.existsByStageId(stage.getId());
+    }
+
+    private void validateNoAssignmentConflict(
+            List<Stage> stages,
+            Stage target,
+            LocalDateTime newStart
+    ) {
+        LocalDateTime tempEnd = newStart.plusDays(target.getEstimatedDay());
+
+        for (Stage stage : stages) {
+            if (stage.getOrder() <= target.getOrder()) continue;
+
+            boolean hasWorker = stageAssignmentRepository.existsByStageId(stage.getId());
+            LocalDateTime stageStart = stage.getExpectedStartAt();
+
+            if (hasWorker && (stageStart == null || !stageStart.isAfter(tempEnd))) {
+                throw new BusinessException("与后续已分配工人的阶段冲突，调整失败");
+            }
+
+            if (stageStart != null && stageStart.isAfter(tempEnd)) {
+                tempEnd = stageStart.plusDays(stage.getEstimatedDay());
+            } else {
+                tempEnd = tempEnd.plusDays(stage.getEstimatedDay());
+            }
+        }
+    }
+
+
 
     public Stage getStageByHouseIdAndOrder(Long houseId, Integer order) {
         return (Stage) stageRepository.findByHouseIdAndOrder(houseId, order).orElseThrow(null);

@@ -166,6 +166,7 @@ public class WorkerService {
                 expectedEndAt,
                 pageable
         );
+        List<StageAssignment> stageAssignments = stageAssignmentRepository.findByStageId(stageId);
         Map<Long, StageAssignment.AssignmentStatus> assignmentStatusByWorkerId = stageAssignmentRepository
                 .findByStageId(stageId)
                 .stream()
@@ -187,6 +188,7 @@ public class WorkerService {
         response.setRequiredCount(stage.getRequiredCount());
         response.setExpectedStartAt(expectedStartAt.toString());
         response.setEstimatedDay(stage.getEstimatedDay());
+        response.setCanEdit(stageAssignments.isEmpty());
         response.setPage(availableWorkers.getNumber());
         response.setSize(availableWorkers.getSize());
         response.setTotalPages(availableWorkers.getTotalPages());

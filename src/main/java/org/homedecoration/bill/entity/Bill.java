@@ -23,7 +23,8 @@ public class Bill {
     public enum BizType {
         LAYOUT,
         FURNITURE,
-        CONSTRUCTION
+        CONSTRUCTION,
+        WAGE, //关联一个STAGE的工资订单
     }
 
     /* ===== 支付状态 ===== */

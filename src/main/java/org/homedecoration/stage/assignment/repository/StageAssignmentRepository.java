@@ -28,4 +28,5 @@ public interface StageAssignmentRepository extends JpaRepository<StageAssignment
             java.time.LocalDateTime expectedEndAt
     );
 
+    boolean existsByStageId(Long id);
 }
