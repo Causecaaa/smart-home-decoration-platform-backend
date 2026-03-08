@@ -381,11 +381,11 @@ public class StageService {
         HouseMaterialSummaryResponse cache =
                 (HouseMaterialSummaryResponse) redisTemplate.opsForValue().get(cacheKey);
 
-//        if (cache != null) {
-//            System.out.println("[HouseMaterials] HIT cache, cost="
-//                    + (System.currentTimeMillis() - start) + "ms");
-//            return cache;
-//        }
+        if (cache != null) {
+            System.out.println("[HouseMaterials] HIT cache, cost="
+                    + (System.currentTimeMillis() - start) + "ms");
+            return cache;
+        }
 
 
         HouseMaterialSummaryResponse response = new HouseMaterialSummaryResponse();
