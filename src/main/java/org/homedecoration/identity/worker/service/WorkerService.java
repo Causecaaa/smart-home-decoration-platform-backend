@@ -166,6 +166,7 @@ public class WorkerService {
                 expectedEndAt,
                 pageable
         );
+
         List<StageAssignment> stageAssignments = stageAssignmentRepository.findByStageId(stageId);
         Map<Long, StageAssignment.AssignmentStatus> assignmentStatusByWorkerId = stageAssignmentRepository
                 .findByStageId(stageId)

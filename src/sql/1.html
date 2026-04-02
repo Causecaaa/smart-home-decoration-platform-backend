@@ -130,6 +130,31 @@ REFERENCES house_room(room_id)
 ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='家具设计方案表（房间级）';
 
+CREATE TABLE furniture_image (
+image_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '家具设计图ID',
+scheme_id BIGINT NOT NULL COMMENT '所属家具设计方案',
+image_url VARCHAR(255) NOT NULL COMMENT '图片地址',
+image_type VARCHAR(20) COMMENT 'DESIGN / CONFIRMED',
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+CONSTRAINT fk_image_scheme
+FOREIGN KEY (scheme_id)
+REFERENCES furniture_scheme(scheme_id)
+ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='家具设计图片表';
+
+CREATE TABLE furniture_room_image (
+room_image_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '房间图片ID',
+room_id BIGINT NOT NULL COMMENT '所属房间',
+image_url VARCHAR(255) NOT NULL COMMENT '图片地址',
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+CONSTRAINT fk_room_image_room
+FOREIGN KEY (room_id)
+REFERENCES house_room(room_id)
+ON DELETE CASCADE
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='房间图片表';
+
 
 
 CREATE TABLE scheme_room_material (
@@ -194,17 +219,7 @@ updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 
 
 
-CREATE TABLE furniture_image (
-image_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '家具设计图ID',
-scheme_id BIGINT NOT NULL COMMENT '所属家具设计方案',
-image_url VARCHAR(255) NOT NULL COMMENT '图片地址',
-image_type VARCHAR(20) COMMENT 'DESIGN / CONFIRMED',
-created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-CONSTRAINT fk_image_scheme
-FOREIGN KEY (scheme_id)
-REFERENCES furniture_scheme(scheme_id)
-ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='家具设计图片表';
+
 
 
 -- 通用账单表（支持定金 + 尾款）

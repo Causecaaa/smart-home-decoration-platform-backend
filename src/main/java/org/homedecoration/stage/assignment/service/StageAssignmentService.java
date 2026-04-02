@@ -518,6 +518,7 @@ public class StageAssignmentService {
                 assignment.setWorkerId(w.getUserId());
                 assignment.setExpectedStartAt(newStart);
                 assignment.setExpectedEndAt(newStart.plusDays(stage.getEstimatedDay()));
+                assignment.setCanLeave(true);
                 assignment.setStatus(StageAssignment.AssignmentStatus.PENDING);
 
                 stageAssignmentRepository.save(assignment);

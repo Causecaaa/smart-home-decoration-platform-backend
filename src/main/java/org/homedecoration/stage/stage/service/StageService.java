@@ -47,16 +47,17 @@ import java.util.stream.Collectors;
 public class StageService {
     private static final int DEFAULT_ROOM_COUNT = 5;
 
-    // 阶段映射常量
-    private static final Map<Integer, String> STAGE_MAP = Map.of(
-            1, "拆改阶段",
-            2, "水电改造",
-            3, "泥工阶段",
-            4, "木工阶段",
-            5, "油漆 / 面漆阶段",
-            6, "瓦工 / 瓷砖铺贴",
-            7, "收尾 / 清洁阶段"
-    );
+    private static final Map<Integer, String> STAGE_MAP = new LinkedHashMap<>();
+
+    static {
+        STAGE_MAP.put(1, "拆改阶段");
+        STAGE_MAP.put(2, "水电改造");
+        STAGE_MAP.put(3, "泥工阶段");
+        STAGE_MAP.put(4, "木工阶段");
+        STAGE_MAP.put(5, "油漆 / 面漆阶段");
+        STAGE_MAP.put(6, "瓦工 / 瓷砖铺贴");
+        STAGE_MAP.put(7, "收尾 / 清洁阶段");
+    }
 
     // 依赖注入
     private final HouseRepository houseRepository;
@@ -284,7 +285,11 @@ public class StageService {
         System.out.println("[StageService] 房屋总面积: " + houseArea + ", 房间数量: " + roomCount);
 
         List<Stage> stages = new ArrayList<>();
+        // 第一个阶段：当前时间 + 2 天
+        LocalDateTime currentStartTime = LocalDateTime.now().plusDays(2);
+
         for (Map.Entry<Integer, String> entry : STAGE_MAP.entrySet()) {
+
             Stage stage = new Stage();
             stage.setHouseId(houseId);
             stage.setOrder(entry.getKey());
@@ -295,14 +300,24 @@ public class StageService {
             // 计算人数和预计天数
             int requiredCount = calculateRequiredCount(entry.getValue(), houseArea, roomCount);
             int estimatedDay = calculateEstimatedDays(entry.getValue(), houseArea, roomCount);
+
             stage.setRequiredCount(requiredCount);
             stage.setEstimatedDay(estimatedDay);
 
+            // 设置开始时间
+            stage.setExpectedStartAt(currentStartTime);
+
+            // 计算结束时间
+            LocalDateTime currentEndTime = currentStartTime.plusDays(estimatedDay);
+
             System.out.println("[StageService] 创建阶段: " + entry.getValue() +
-                    ", 所需人数: " + requiredCount +
-                    ", 预计天数: " + estimatedDay);
+                    ", 开始时间: " + currentStartTime +
+                    ", 结束时间: " + currentEndTime);
 
             stages.add(stage);
+
+            // 下一阶段开始时间 = 当前阶段结束时间 + 2 天
+            currentStartTime = currentEndTime.plusDays(2);
         }
 
         stageRepository.saveAll(stages);
@@ -381,11 +396,11 @@ public class StageService {
         HouseMaterialSummaryResponse cache =
                 (HouseMaterialSummaryResponse) redisTemplate.opsForValue().get(cacheKey);
 
-//        if (cache != null) {
-//            System.out.println("[HouseMaterials] HIT cache, cost="
-//                    + (System.currentTimeMillis() - start) + "ms");
-//            return cache;
-//        }
+        if (cache != null) {
+            System.out.println("[HouseMaterials] HIT cache, cost="
+                    + (System.currentTimeMillis() - start) + "ms");
+            return cache;
+        }
 
 
         HouseMaterialSummaryResponse response = new HouseMaterialSummaryResponse();
@@ -615,7 +630,8 @@ public class StageService {
         info.setOrder(stage.getOrder());
         info.setStageName(stage.getStageName());
         info.setStatus(STATUS_MAP.getOrDefault(stage.getStatus(), stage.getStatus().toString()));
-        info.setMainWorkerType(WORKER_TYPE_MAP.getOrDefault(stage.getMainWorkerType(), "未知工种"));info.setRequiredCount(stage.getRequiredCount());
+        info.setMainWorkerType(WORKER_TYPE_MAP.getOrDefault(stage.getMainWorkerType(), "未知工种"));
+        info.setRequiredCount(stage.getRequiredCount());
         info.setEstimatedDay(stage.getEstimatedDay());
         info.setExpectedStartAt(String.valueOf(stage.getExpectedStartAt()));
         info.setStart_at(stage.getStart_at());
@@ -656,9 +672,7 @@ public class StageService {
 
         // 5️⃣ 填充用户已购买材料
         StagePurchasedMaterialsResponse purchasedMaterials = stageOrderService.getPurchasedMaterials(stage.getId(), userId);
-        System.out.println("stageId" + stage.getId());
-        System.out.println("userId" + userId);
-        System.out.println("PURCHASED MATERIALS:" + purchasedMaterials);
+
 
         info.setPurchasedMainMaterials(purchasedMaterials.getMainMaterials());
         info.setPurchasedAuxiliaryMaterials(purchasedMaterials.getAuxiliaryMaterials());
@@ -714,7 +728,6 @@ public class StageService {
                     getRecommendedMaterialTypes(stage.getOrder())
             );
         }
-
 
         return response;
     }
