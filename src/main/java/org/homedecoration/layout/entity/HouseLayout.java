@@ -44,6 +44,8 @@ public class HouseLayout {
     @JoinColumn(name = "furniture_designer_id", nullable = true)
     private Long furnitureDesignerId;
 
+    @JoinColumn(name= "furniture_design_notes")
+    private String furnitureDesignNotes;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "layout_intent", nullable = false, length = 20)

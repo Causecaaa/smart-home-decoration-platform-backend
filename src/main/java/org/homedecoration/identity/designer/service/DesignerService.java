@@ -155,21 +155,22 @@ public class DesignerService {
                 HouseLayout.LayoutStatus.CONFIRMED
         );
 
-        // 第二步：过滤掉已经全额支付的家具阶段账单
-        List<Bill> paidBills = billRepository.findByBizTypeAndPayStatusAndPayeeIdOrderByCreatedAtAsc(
+        // 第二步：只保留已付定金的布局（过滤掉 UNPAID 和 PAID）
+        List<Bill> depositPaidBills = billRepository.findByBizTypeAndPayStatusAndPayeeIdOrderByCreatedAtAsc(
                 Bill.BizType.FURNITURE,
-                Bill.PayStatus.PAID,  // 已完成支付的
+                Bill.PayStatus.DEPOSIT_PAID,  // 只保留已付定金的
                 designerId
         );
 
-        // 保留未支付尾款的布局
-        List<Long> paidLayoutIds = paidBills.stream()
+        // 保留只有在已付定金账单里的布局
+        List<Long> depositPaidLayoutIds = depositPaidBills.stream()
                 .map(Bill::getBizId)
                 .toList();
 
-        confirmedLayouts.removeIf(layout -> paidLayoutIds.contains(layout.getId()));
+        confirmedLayouts.removeIf(layout -> !depositPaidLayoutIds.contains(layout.getId()));
 
         return confirmedLayouts;
     }
+
 
 }

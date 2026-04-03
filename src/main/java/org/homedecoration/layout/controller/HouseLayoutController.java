@@ -134,6 +134,7 @@ public class HouseLayoutController {
     @Data
     public static class ConfirmFurnitureDesignerRequest {
         private Long furnitureDesignerId;
+        private String notes;
     }
 
     @PutMapping("/{layoutId}/confirm/furnitureDesigner")
@@ -147,6 +148,7 @@ public class HouseLayoutController {
         HouseLayout updatedLayout = houseLayoutService.confirmFurnitureDesigner(
                 layoutId,
                 request.getFurnitureDesignerId(),
+                request.getNotes(),
                 userId
         );
 

@@ -31,6 +31,7 @@ public class DesignerFurnitureResponse {
     private String layoutType;
     private Integer floorCount;
     private House.DecorationType decorationType;
+    private String designNotes;
 
 
     private FurnitureScheme.SchemeStatus furnitureStatus;
@@ -40,11 +41,12 @@ public class DesignerFurnitureResponse {
     private BigDecimal billAmount;
     private BigDecimal depositAmount;
     private Bill.PayStatus payStatus;
+    private boolean finalSubmitted;
 
 
     public static DesignerFurnitureResponse toDTO(HouseLayout layout,
                                               FurnitureScheme.SchemeStatus furnitureStatus,
-                                              Bill bill) {
+                                              Bill bill, boolean finalSubmitted) {
         DesignerFurnitureResponse dto = new DesignerFurnitureResponse();
         dto.setLayoutId(layout.getId());
 
@@ -64,8 +66,11 @@ public class DesignerFurnitureResponse {
         dto.setLayoutType(house.getLayoutType());
         dto.setFloorCount(house.getFloorCount());
         dto.setDecorationType(house.getDecorationType());
+        dto.setDesignNotes(layout.getFurnitureDesignNotes());
 
         dto.setFurnitureStatus(furnitureStatus);
+
+        dto.setFinalSubmitted(finalSubmitted);
 
         if(bill != null){
             dto.setBillId(bill.getId());

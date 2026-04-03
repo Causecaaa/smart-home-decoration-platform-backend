@@ -109,7 +109,6 @@ public class StageAssignmentService {
                 .toList();
     }
 
-    // 文件路径: D:\CODE\home_decoration_backend\src\main\java\org\homedecoration\stage\assignment\service\StageAssignmentService.java
 
     public WorkerStageCalendarResponse getWorkerStageCalendar(Long workerId, YearMonth yearMonth) {
         LocalDateTime monthStart = yearMonth.atDay(1).atStartOfDay();
@@ -456,6 +455,8 @@ public class StageAssignmentService {
                 .stream()
                 .filter(stageAssignment ->
                         stageAssignment.getStatus() != StageAssignment.AssignmentStatus.CANCELLED)
+                .filter(stageAssignment ->
+                        stageAssignment.getStatus() != StageAssignment.AssignmentStatus.WORKER_REJECTED)
                 .filter(stageAssignment -> !stageAssignment.getWorkerId().equals(workerId)) // 排除当前工人
                 .map(stageAssignment -> {
                     WorkerSimpleResponse coworker = workerService.getSimpleResponse(stageAssignment.getWorkerId());

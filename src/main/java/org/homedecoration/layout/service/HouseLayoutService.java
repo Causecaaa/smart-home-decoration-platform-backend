@@ -142,8 +142,9 @@ public class HouseLayoutService {
 
 
         Bill bill = billRepository.findByBizTypeAndBizId(Bill.BizType.FURNITURE, layoutId).orElse(null);
+        Boolean finalSubmitted = imageRepository.findByLayoutIdAndImageType(layoutId, HouseLayoutImage.ImageType.FINAL) != null;
 
-        return DesignerFurnitureResponse.toDTO(layout, schemeStatus, bill);
+        return DesignerFurnitureResponse.toDTO(layout, schemeStatus, bill, finalSubmitted);
     }
 
     private FurnitureScheme.SchemeStatus determineFurnitureSchemeStatusByRooms(Long layoutId) {
@@ -239,7 +240,7 @@ public class HouseLayoutService {
     }
 
     @Transactional
-    public HouseLayout confirmFurnitureDesigner(Long layoutId, Long furnitureDesignerId, Long userId) {
+    public HouseLayout confirmFurnitureDesigner(Long layoutId, Long furnitureDesignerId, String notes, Long userId) {
     HouseLayout layout = houseLayoutRepository.findById(layoutId)
             .orElseThrow(() -> new BusinessException("Layout不存在"));
 
@@ -257,6 +258,7 @@ public class HouseLayoutService {
     }
 
     layout.setFurnitureDesignerId(furnitureDesignerId);
+    layout.setFurnitureDesignNotes( notes);
     HouseLayout savedLayout = houseLayoutRepository.save(layout);
 
     // 查找现有的家具账单
