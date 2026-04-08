@@ -19,5 +19,10 @@ public class LaborMarketResponse {
     private Integer totalPages;
     private Long totalElements;
 
+    private Integer page;
+    private Integer size;
+    private Integer totalPages;
+    private Long totalElements;
+
     private List<WorkerResponse> workers = new ArrayList<>();
 }
